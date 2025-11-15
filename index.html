@@ -1,226 +1,121 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>บันทึกเวลาและคำนวณค่าแรง (AM/PM)</title>
-  <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#98a0aa;--glass: rgba(255,255,255,0.03)}
-    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,'Noto Sans Thai',sans-serif}
-    body{margin:0;background:linear-gradient(180deg,#071428 0%,#071a26 100%);color:#e6eef6;padding:24px}
-    .container{max-width:960px;margin:0 auto}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    p.lead{margin:6px 0 0;color:var(--muted);font-size:13px}
-    .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6);margin-bottom:14px}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-    label{font-size:12px;color:var(--muted)}
-    input,select{width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:13px}
-    .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#042022;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:10px;border-bottom:1px dashed rgba(255,255,255,0.03);text-align:left;font-size:13px}
-    th{font-size:12px;color:var(--muted)}
-    .muted{color:var(--muted)}
-    .right{text-align:right}
-    .small{font-size:12px}
-    .controls{display:flex;gap:8px;align-items:center}
-    .summary{margin-top:8px;font-size:13px;color:var(--muted)}
-    @media (max-width:720px){.grid{grid-template-columns:repeat(2,1fr)}header{flex-direction:column;align-items:flex-start} .container{padding:12px}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>คำนวนค่าแรง - เวอร์ชันปรับปรุง</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #f8f8f8;
+}
+.container {
+  max-width: 450px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+input, select, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.result {
+  background: #e7f7e7;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 10px;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <header>
-      <div>
-        <!-- หัวข้อสามารถแก้ไขได้ -->
-        <h1 contenteditable="true" style="outline:1px dashed rgba(255,255,255,0.1);padding:2px;border-radius:4px">บันทึกเวลา & คำนวณค่าแรง (AM/PM)</h1>
-        <p class="lead">ชั่วโมงละ <strong id="wageLabel">50</strong> บาท — บันทึกจะถูกเก็บไว้ในเครื่อง (localStorage)</p>
-      </div>
-      <div class="controls">
-        <button id="exportBtn">Export CSV</button>
-        <button id="clearBtn" class="ghost">เคลียร์ทั้งหมด</button>
-      </div>
-    </header>
+<div class="container">
+<h2>📌 คำนวณค่าแรงรายวัน / Full-Time / OT</h2>
 
-    <section class="card">
-      <div class="grid">
-        <div>
-          <label>วันที่</label>
-          <input type="date" id="date" style="padding:4px"/>
-        </div>
-        <div>
-          <label>เวลาเริ่ม</label>
-          <div style="display:flex;gap:4px">
-            <input type="text" id="startTime" placeholder="hh:mm" maxlength="5" />
-            <select id="startPeriod">
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label>เวลาเลิก</label>
-          <div style="display:flex;gap:4px">
-            <input type="text" id="endTime" placeholder="hh:mm" maxlength="5" />
-            <select id="endPeriod">
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label>อัตราค่าแรง/ชั่วโมง</label>
-          <input type="number" id="wage" min="0" value="50" />
-        </div>
-      </div>
-      <div class="actions">
-        <button id="addBtn">บันทึก</button>
-        <button id="addNextDayBtn" class="ghost">บันทึก (ข้ามวัน)</button>
-        <div style="flex:1"></div>
-        <div class="muted small">
-          💰 รวมทั้งหมด: <strong id="totalLabel">0.00</strong> บาท<br/>
-          📅 วันทำงาน: <strong id="daysLabel">0</strong> วัน<br/>
-          ⏳ วันหนัก (&gt;8ชม.): <strong id="heavyLabel">0</strong> วัน
-        </div>
-      </div>
-    </section>
+<label>ชื่อหัวข้อ / โปรเจค</label>
+<input type="text" id="title" placeholder="เช่น งานช่างซ่อมบ้าน">
 
-    <section class="card">
-      <h3 style="margin:0 0 8px 0">รายการย้อนหลัง</h3>
-      <div style="overflow:auto;max-height:400px">
-        <table id="logTable">
-          <thead>
-            <tr>
-              <th>วันที่</th>
-              <th>เวลา</th>
-              <th>ระยะเวลา</th>
-              <th class="right">เงิน (บาท)</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+<label>วันที่เริ่มงาน</label>
+<input type="date" id="startDate">
 
-  <script>
-    const key = 'workLogs_v1';
-    const dateInput = document.getElementById('date');
-    const startInput = document.getElementById('startTime');
-    const endInput = document.getElementById('endTime');
-    const startPeriod = document.getElementById('startPeriod');
-    const endPeriod = document.getElementById('endPeriod');
-    const wageInput = document.getElementById('wage');
-    const addBtn = document.getElementById('addBtn');
-    const addNextDayBtn = document.getElementById('addNextDayBtn');
-    const logTableBody = document.querySelector('#logTable tbody');
-    const totalLabel = document.getElementById('totalLabel');
-    const exportBtn = document.getElementById('exportBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const wageLabel = document.getElementById('wageLabel');
-    const daysLabel = document.getElementById('daysLabel');
-    const heavyLabel = document.getElementById('heavyLabel');
+<label>วันที่สิ้นสุดงาน</label>
+<input type="date" id="endDate">
 
-    function loadLogs(){
-      try{
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : [];
-      }catch(e){return []}
-    }
-    function saveLogs(logs){ localStorage.setItem(key, JSON.stringify(logs)); }
-    function formatDuration(minutesTotal){
-      const h = Math.floor(minutesTotal/60);
-      const m = minutesTotal % 60;
-      return `${h} ชั่วโมง ${m} นาที`;
-    }
-    function convertTo24Hour(time, period){
-      if(!time) return null;
-      let [h,m] = time.split(":").map(Number);
-      if(period === "PM" && h < 12) h += 12;
-      if(period === "AM" && h === 12) h = 0;
-      return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
-    }
-    function calculateMinutes(dateStr, start, end, crossNextDay=false){
-      const s = new Date(dateStr + 'T' + start + ':00');
-      let e = new Date(dateStr + 'T' + end + ':00');
-      if(crossNextDay || e <= s){ e = new Date(e.getTime() + 24*60*60*1000); }
-      return Math.round((e - s)/60000);
-    }
-    function addLog(dateStr, startTime, endTime, wagePerHour, crossNextDay=false){
-      if(!dateStr || !startTime || !endTime) return {error:'กรอกข้อมูลไม่ครบ'};
-      const minutes = calculateMinutes(dateStr, startTime, endTime, crossNextDay);
-      const wage = +(minutes/60 * wagePerHour).toFixed(2);
-      const logs = loadLogs();
-      const entry = {id:Date.now(), date:dateStr, start:startTime, end:endTime, minutes, wagePerHour, wage};
-      logs.push(entry); saveLogs(logs); renderLogs(); return {ok:true, entry};
-    }
-    function deleteLog(id){
-      let logs = loadLogs().filter(l=> l.id !== id);
-      saveLogs(logs); renderLogs();
-    }
-    function renderLogs(){
-      const logs = loadLogs();
-      logTableBody.innerHTML = '';
-      let total = 0, daySet = new Set(), heavyDays = new Set();
-      logs.sort((a,b)=> b.id - a.id);
-      for(const l of logs){
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${l.date}</td><td>${l.start} - ${l.end}</td><td>${formatDuration(l.minutes)}</td><td class="right">${l.wage.toFixed(2)}</td><td><button class='ghost' onclick="if(confirm('ลบรายการนี้?')) deleteLog(${l.id})">ลบ</button></td>`;
-        logTableBody.appendChild(tr);
-        total += Number(l.wage);
-        daySet.add(l.date);
-        if(l.minutes >= 8*60) heavyDays.add(l.date);
-      }
-      totalLabel.textContent = total.toFixed(2);
-      wageLabel.textContent = Number(wageInput.value || 50).toFixed(0);
-      daysLabel.textContent = daySet.size;
-      heavyLabel.textContent = heavyDays.size;
-    }
-    addBtn.addEventListener('click', ()=>{
-      const d = dateInput.value;
-      const s = convertTo24Hour(startInput.value, startPeriod.value);
-      const e = convertTo24Hour(endInput.value, endPeriod.value);
-      const w = Number(wageInput.value) || 50;
-      const res = addLog(d,s,e,w,false);
-      if(res && res.error) alert(res.error);
-      else{ startInput.value=''; endInput.value=''; }
-    });
-    addNextDayBtn.addEventListener('click', ()=>{
-      const d = dateInput.value;
-      const s = convertTo24Hour(startInput.value, startPeriod.value);
-      const e = convertTo24Hour(endInput.value, endPeriod.value);
-      const w = Number(wageInput.value) || 50;
-      const res = addLog(d,s,e,w,true);
-      if(res && res.error) alert(res.error);
-      else{ startInput.value=''; endInput.value=''; }
-    });
-    exportBtn.addEventListener('click', ()=>{
-      const logs = loadLogs();
-      if(!logs.length){ alert('ไม่มีข้อมูลให้ส่งออก'); return; }
-      const header = ['date,start,end,duration_minutes,wage_per_hour,wage_baht'];
-      const rows = logs.map(l=> `${l.date},${l.start},${l.end},${l.minutes},${l.wagePerHour},${l.wage}`);
-      const csv = header.concat(rows).join('\n');
-      const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'work_log.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-    clearBtn.addEventListener('click', ()=>{
-      if(confirm('เคลียร์ข้อมูลทั้งหมด?')){ localStorage.removeItem(key); renderLogs(); }
-    });
-    function autoFormatTime(input){
-      input.addEventListener("input", ()=>{
-        let v = input.value.replace(/[^0-9]/g, "");
-        if(v.length >= 3){
-          input.value = v.substring(0,2) + ":" + v.substring(2,4);
-        }else{ input.value = v; }
-      });
-    }
-    autoFormatTime(startInput); autoFormatTime(endInput);
-    renderLogs();
-    const today = new Date(); dateInput.value = today.toISOString().slice(0,10);
-  </script>
+<label>รูปแบบการทำงาน</label>
+<select id="workType">
+  <option value="daily">รายวัน (กำหนดค่าแรงเอง)</option>
+  <option value="full">Full-Time (วันละ 500 บาท)</option>
+</select>
+
+<label>ค่าแรงต่อวัน (บาท)</label>
+<input type="number" id="dailyWage" placeholder="เช่น 450">
+
+<label>OT (เลือกอัตรา)</label>
+<select id="otRate">
+  <option value="0">ไม่คิด OT</option>
+  <option value="1.5">OT x1.5</option>
+  <option value="2.0">OT x2.0</option>
+  <option value="2.25">OT x2.25</option>
+</select>
+
+<label>จำนวนชั่วโมง OT ต่อวัน</label>
+<input type="number" id="otHours" value="0">
+
+<button onclick="calculate()">คำนวณรายได้</button>
+
+<div class="result" id="resultBox" style="display:none"></div>
+</div>
+
+<script>
+function calculate() {
+  const title = document.getElementById("title").value || "ไม่ระบุ";
+  const start = new Date(document.getElementById("startDate").value);
+  const end = new Date(document.getElementById("endDate").value);
+  const workType = document.getElementById("workType").value;
+  const otRate = parseFloat(document.getElementById("otRate").value);
+  const otHours = parseFloat(document.getElementById("otHours").value);
+
+  if (!start || !end || isNaN(start) || isNaN(end)) {
+    alert("⚠ กรุณาเลือกวันที่ให้ครบ");
+    return;
+  }
+
+  // คำนวณจำนวนวัน (แก้ให้ตรง 100%)
+  const oneDay = 1000 * 60 * 60 * 24;
+  const diffDays = Math.floor((end - start) / oneDay) + 1;
+
+  let dailyWage = workType === "full" ? 500 : parseFloat(document.getElementById("dailyWage").value);
+  if (isNaN(dailyWage) || dailyWage <= 0) {
+    alert("⚠ กรุณากรอกค่าแรงต่อวันให้ถูกต้อง");
+    return;
+  }
+
+  // รายได้ปกติ
+  const normalPay = diffDays * dailyWage;
+
+  // รายได้ OT
+  const otPay = otRate > 0 ? diffDays * (dailyWage / 8 * otRate * otHours) : 0;
+
+  // รวมทั้งหมด
+  const total = normalPay + otPay;
+
+  document.getElementById("resultBox").style.display = "block";
+  document.getElementById("resultBox").innerHTML = `
+    <h3>📌 สรุปผลงาน: ${title}</h3>
+    <p>📅 จำนวนวันทำงาน: <b>${diffDays} วัน</b></p>
+    <p>💰 ค่าแรงปกติ: <b>${normalPay.toFixed(2)} บาท</b></p>
+    <p>⏱ รายได้ OT: <b>${otPay.toFixed(2)} บาท</b></p>
+    <hr>
+    <p>💎 <b>รวมทั้งหมด: ${total.toFixed(2)} บาท</b></p>
+  `;
+}
+</script>
 </body>
 </html>
