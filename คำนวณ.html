@@ -1,121 +1,88 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>คำนวนค่าแรง - เวอร์ชันปรับปรุง</title>
-
+<meta charset="UTF-8">
+<title>คำนวณค่าแรงและค่า OT</title>
 <style>
-body {
-  font-family: sans-serif;
-  padding: 20px;
-  background: #f8f8f8;
-}
-.container {
-  max-width: 450px;
-  margin: auto;
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
-}
-input, select, button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-.result {
-  background: #e7f7e7;
-  padding: 15px;
-  margin-top: 15px;
-  border-radius: 10px;
-}
+    body { font-family: Tahoma, sans-serif; padding: 20px; max-width: 450px; margin: auto; }
+    input, select, button { width: 100%; padding: 8px; margin: 5px 0; font-size: 16px; }
+    .result { background: #f2f2f2; padding: 10px; margin-top: 15px; border-radius: 8px; }
 </style>
 </head>
-
 <body>
-<div class="container">
-<h2>📌 คำนวณค่าแรงรายวัน / Full-Time / OT</h2>
 
-<label>ชื่อหัวข้อ / โปรเจค</label>
-<input type="text" id="title" placeholder="เช่น งานช่างซ่อมบ้าน">
+<h2>คำนวณค่าแรง + OT</h2>
 
-<label>วันที่เริ่มงาน</label>
-<input type="date" id="startDate">
+<label>วันที่ทำงาน</label>
+<input type="date" id="workDate">
 
-<label>วันที่สิ้นสุดงาน</label>
-<input type="date" id="endDate">
+<label>เข้างาน</label>
+<input type="time" id="startTime">
 
-<label>รูปแบบการทำงาน</label>
-<select id="workType">
-  <option value="daily">รายวัน (กำหนดค่าแรงเอง)</option>
-  <option value="full">Full-Time (วันละ 500 บาท)</option>
-</select>
+<label>เลิกงาน</label>
+<input type="time" id="endTime">
 
-<label>ค่าแรงต่อวัน (บาท)</label>
-<input type="number" id="dailyWage" placeholder="เช่น 450">
+<label>เวลาพัก (ชั่วโมง)</label>
+<input type="number" id="breakHour" value="1" step="0.5">
 
-<label>OT (เลือกอัตรา)</label>
+<label>อัตราค่าแรงต่อวัน (8 ชม.)</label>
+<input type="number" id="basePay" value="500">
+
+<label>เรท OT</label>
 <select id="otRate">
-  <option value="0">ไม่คิด OT</option>
-  <option value="1.5">OT x1.5</option>
-  <option value="2.0">OT x2.0</option>
-  <option value="2.25">OT x2.25</option>
+  <option value="1.5">OT x 1.5</option>
+  <option value="2.0">OT x 2.0</option>
+  <option value="2.25">OT x 2.25</option>
 </select>
 
-<label>จำนวนชั่วโมง OT ต่อวัน</label>
-<input type="number" id="otHours" value="0">
+<button onclick="calculatePay()">คำนวณ</button>
 
-<button onclick="calculate()">คำนวณรายได้</button>
-
-<div class="result" id="resultBox" style="display:none"></div>
-</div>
+<div class="result" id="result"></div>
 
 <script>
-function calculate() {
-  const title = document.getElementById("title").value || "ไม่ระบุ";
-  const start = new Date(document.getElementById("startDate").value);
-  const end = new Date(document.getElementById("endDate").value);
-  const workType = document.getElementById("workType").value;
-  const otRate = parseFloat(document.getElementById("otRate").value);
-  const otHours = parseFloat(document.getElementById("otHours").value);
+function calculatePay() {
+  let start = document.getElementById("startTime").value;
+  let end = document.getElementById("endTime").value;
+  let breakH = parseFloat(document.getElementById("breakHour").value);
+  let basePay = parseFloat(document.getElementById("basePay").value);
+  let otRate = parseFloat(document.getElementById("otRate").value);
 
-  if (!start || !end || isNaN(start) || isNaN(end)) {
-    alert("⚠ กรุณาเลือกวันที่ให้ครบ");
+  if (!start || !end) {
+    document.getElementById("result").innerHTML = "กรุณากรอกเวลาให้ครบครับ";
     return;
   }
 
-  // คำนวณจำนวนวัน (แก้ให้ตรง 100%)
-  const oneDay = 1000 * 60 * 60 * 24;
-  const diffDays = Math.floor((end - start) / oneDay) + 1;
+  let tStart = new Date("2024-01-01 " + start);
+  let tEnd = new Date("2024-01-01 " + end);
 
-  let dailyWage = workType === "full" ? 500 : parseFloat(document.getElementById("dailyWage").value);
-  if (isNaN(dailyWage) || dailyWage <= 0) {
-    alert("⚠ กรุณากรอกค่าแรงต่อวันให้ถูกต้อง");
-    return;
-  }
+  if (tEnd < tStart) tEnd.setDate(tEnd.getDate() + 1);
 
-  // รายได้ปกติ
-  const normalPay = diffDays * dailyWage;
+  let workHours = (tEnd - tStart) / (1000 * 60 * 60);
+  let netWorkHours = workHours - breakH;
 
-  // รายได้ OT
-  const otPay = otRate > 0 ? diffDays * (dailyWage / 8 * otRate * otHours) : 0;
+  if (netWorkHours < 0) netWorkHours = 0;
 
-  // รวมทั้งหมด
-  const total = normalPay + otPay;
+  let normalHours = Math.min(8, netWorkHours);
+  let otHours = Math.max(0, netWorkHours - 8);
 
-  document.getElementById("resultBox").style.display = "block";
-  document.getElementById("resultBox").innerHTML = `
-    <h3>📌 สรุปผลงาน: ${title}</h3>
-    <p>📅 จำนวนวันทำงาน: <b>${diffDays} วัน</b></p>
-    <p>💰 ค่าแรงปกติ: <b>${normalPay.toFixed(2)} บาท</b></p>
-    <p>⏱ รายได้ OT: <b>${otPay.toFixed(2)} บาท</b></p>
-    <hr>
-    <p>💎 <b>รวมทั้งหมด: ${total.toFixed(2)} บาท</b></p>
+  let otMinutes = Math.round((otHours - Math.floor(otHours)) * 60);
+  let otHr = Math.floor(otHours);
+
+  let normalPay = (basePay / 8) * normalHours;
+  let otPay = (basePay / 8) * otHours * otRate;
+  let totalPay = normalPay + otPay;
+
+  document.getElementById("result").innerHTML = `
+    ⏳ ทำงานสุทธิ: ${netWorkHours.toFixed(2)} ชม.<br>
+    💼 คิดเป็นเวลางานปกติ: ${normalHours.toFixed(2)} ชม.<br>
+    ⚡ OT: ${otHr} ชม. ${otMinutes} นาที (เรท x${otRate}) <br>
+    ------------------------<br>
+    💵 ค่าแรงปกติ: ${normalPay.toFixed(2)} บาท<br>
+    💵 ค่า OT: ${otPay.toFixed(2)} บาท<br>
+    🧮 รวมทั้งหมด: <b>${totalPay.toFixed(2)} บาท</b>
   `;
 }
 </script>
+
 </body>
 </html>
