@@ -9,11 +9,15 @@
     *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,'Noto Sans Thai',sans-serif}
     body{margin:0;background:#071428;color:#e6eef6;padding:24px}
     .container{max-width:900px;margin:auto}
-    h1{margin:0;font-size:20px}
+    h1{margin:0 0 8px 0;font-size:20px}
     .card{background:var(--card);padding:16px;border-radius:12px;margin-top:10px}
     label{font-size:12px;color:var(--muted)}
     input,select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:var(--glass);color:#fff}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    
+    /* ปรับขนาดช่องวันที่ใหม่ */
+    .date-box input{min-width:130px}
+
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
     button{padding:8px 12px;border:0;border-radius:8px;background:var(--accent);color:#042022;cursor:pointer}
     button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
     table{width:100%;border-collapse:collapse;margin-top:12px}
@@ -25,27 +29,27 @@
 <body>
   <div class="container">
 
-    <h1>บันทึกเวลา & คิดค่าแรง + OT</h1>
+    <h1>บันทึกเวลา & คำนวณค่าแรง + OT</h1>
 
     <div class="card">
       <div class="grid">
-        <div>
+        <div class="date-box">
           <label>วันที่</label>
           <input type="date" id="date">
         </div>
 
         <div>
           <label>เวลาเข้า (hh:mm)</label>
-          <input type="text" id="start" placeholder="09:00" maxlength="5">
+          <input type="text" id="start" placeholder="0900" maxlength="5">
         </div>
 
         <div>
           <label>เวลาออก (hh:mm)</label>
-          <input type="text" id="end" placeholder="17:30" maxlength="5">
+          <input type="text" id="end" placeholder="1730" maxlength="5">
         </div>
 
         <div>
-          <label>ค่าแรงต่อชั่วโมง (บาท)</label>
+          <label>ค่าแรง/ชั่วโมง</label>
           <input type="number" id="wage" value="50">
         </div>
 
@@ -60,6 +64,8 @@
       </div>
 
       <button id="addBtn" style="margin-top:10px">บันทึก</button>
+      <button id="exportBtn" class="ghost" style="margin-top:10px">Export CSV</button>
+
       <div style="margin-top:8px;color:var(--muted)">* เกิน 8 ชั่วโมงนับเป็น OT อัตโนมัติ</div>
     </div>
 
@@ -68,10 +74,12 @@
       <table>
         <thead>
           <tr>
+            <th>#</th>
             <th>วันที่</th>
-            <th>ชั่วโมงปกติ</th>
+            <th>เข้า</th>
+            <th>ออก</th>
             <th>OT</th>
-            <th class="right">เงินรวม</th>
+            <th class="right">รวม</th>
             <th>ลบ</th>
           </tr>
         </thead>
@@ -81,36 +89,45 @@
   </div>
 
 <script>
-const key = "worklog_ot_v1";
+const key = "worklog_ot_v2";
 
 function load(){ return JSON.parse(localStorage.getItem(key) || "[]"); }
 function save(data){ localStorage.setItem(key, JSON.stringify(data)); }
 
 function toMinutes(t){
+  if(!t.includes(":")) return 0;
   const [h,m] = t.split(":").map(Number);
   return h*60 + m;
 }
 
+function autoFormat(input){
+  input.addEventListener("input", ()=>{
+    let v = input.value.replace(/[^0-9]/g,"");
+    if(v.length >= 3) input.value = v.slice(0,2)+":"+v.slice(2,4);
+    else input.value = v;
+  });
+}
+
+autoFormat(start);
+autoFormat(end);
+
 function calc(){
-  const d = date.value;
-  const s = start.value;
-  const e = end.value;
-  const w = Number(wage.value);
-  const r = Number(otRate.value);
+  const d = date.value, s = start.value, e = end.value;
+  const w = Number(wage.value), r = Number(otRate.value);
 
   if(!d || !s || !e) return alert("กรอกข้อมูลให้ครบ");
 
   const mins = toMinutes(e) - toMinutes(s);
   if(mins <= 0) return alert("เวลาออกต้องมากกว่าเวลาเข้า");
 
-  const normal = Math.min(mins, 480); // 8 ชม. = 480 นาที
+  const normal = Math.min(mins, 480); 
   const ot = Math.max(0, mins - 480);
 
   const payNormal = (normal/60) * w;
   const payOT = (ot/60) * w * r;
   const total = payNormal + payOT;
 
-  const item = { id:Date.now(), d, normal, ot, total };
+  const item = { id:Date.now(), d, s, e, ot, total };
   const logs = load(); logs.push(item); save(logs);
   render();
 }
@@ -118,16 +135,18 @@ function calc(){
 function render(){
   const logs = load().sort((a,b)=>b.id - a.id);
   logBody.innerHTML = "";
-  for(const l of logs){
+  logs.forEach((l,i)=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td>${i+1}</td>
       <td>${l.d}</td>
-      <td>${(l.normal/60).toFixed(2)} ชม.</td>
+      <td>${l.s}</td>
+      <td>${l.e}</td>
       <td>${(l.ot/60).toFixed(2)} ชม.</td>
       <td class="right">${l.total.toFixed(2)}</td>
       <td><button class="ghost" onclick="del(${l.id})">ลบ</button></td>`;
     logBody.appendChild(tr);
-  }
+  });
 }
 
 function del(id){
@@ -138,6 +157,23 @@ function del(id){
 }
 
 addBtn.onclick = calc;
+
+exportBtn.onclick = ()=>{
+  const logs = load();
+  if(!logs.length) return alert("ไม่มีข้อมูล");
+
+  let csv = "ลำดับ,วันที่,เวลาเข้า,เวลาออก,OT(ชม.),รวมเงิน\n";
+  logs.forEach((l,i)=>{
+    csv += `${i+1},${l.d},${l.s},${l.e},${(l.ot/60).toFixed(2)},${l.total.toFixed(2)}\n`;
+  });
+
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "worklog_ot.csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
 render();
 date.value = new Date().toISOString().slice(0,10);
 </script>
