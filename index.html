@@ -30,7 +30,7 @@
  <div class="grid">
    <div>
      <label>วันที่</label>
-     <input type="date" id="date">
+     <input type="date" id="dateInput">
    </div>
    <div>
      <label>เวลาเข้า</label>
@@ -96,8 +96,12 @@
 <script>
 const key = "worklog_cloud_v1";
 
-function loadLogs(){ try{ return JSON.parse(localStorage.getItem(key)) || [] }catch{return []} }
-function saveLogs(list){ localStorage.setItem(key,JSON.stringify(list)); }
+function loadLogs(){ 
+    try{ return JSON.parse(localStorage.getItem(key)) || [] }catch{return []}
+}
+function saveLogs(list){ 
+    localStorage.setItem(key,JSON.stringify(list)); 
+}
 
 function autoTime(input){
  input.addEventListener("input",()=>{
@@ -106,66 +110,97 @@ function autoTime(input){
    else input.value=v;
  });
 }
-autoTime(startTime); autoTime(endTime);
+autoTime(startTime);
+autoTime(endTime);
 
-function toMinutes(t){ let [h,m]=t.split(":").map(Number); return h*60+m; }
+function toMinutes(t){
+ let [h,m]=t.split(":").map(Number);
+ return h*60+m;
+}
 
 function render(){
  const logs=loadLogs();
  const body=document.getElementById("logBody");
  body.innerHTML="";
+
  let totalOT=0,totalIncome=0;
+
  logs.forEach((l,i)=>{
    totalOT+=l.otHours;
    totalIncome+=l.total;
-   body.innerHTML+=`<tr>
-     <td>${i+1}</td>
-     <td>${l.date}</td>
-     <td>${l.start}</td>
-     <td>${l.end}</td>
-     <td>${l.otHours.toFixed(2)}</td>
-     <td class="right">${l.total.toFixed(2)}</td>
-   </tr>`;
+   body.innerHTML+=`
+     <tr>
+       <td>${i+1}</td>
+       <td>${l.date}</td>
+       <td>${l.start}</td>
+       <td>${l.end}</td>
+       <td>${l.otHours.toFixed(2)}</td>
+       <td class="right">${l.total.toFixed(2)}</td>
+     </tr>
+   `;
  });
+
  document.getElementById("totalDays").textContent = logs.length;
  document.getElementById("totalOT").textContent = totalOT.toFixed(2);
  document.getElementById("totalIncome").textContent = totalIncome.toFixed(2);
 }
 
-addBtn.onclick=()=>{
- const date=date.value;
- const s=startTime.value;
- const e=endTime.value;
- const br=Number(breakHours.value||0);
- const wage=Number(wage.value||0);
- const otRate=Number(document.getElementById("otRate").value);
- if(!date||!s||!e) return alert("กรอกข้อมูลให้ครบ");
+document.getElementById("addBtn").onclick=()=>{
 
- let mStart=toMinutes(s);
- let mEnd=toMinutes(e);
- if(mEnd<mStart) mEnd+=1440;
- let totalWork=(mEnd-mStart)/60;
- let normal=totalWork-br;
- if(normal<0) normal=0;
- let ot=totalWork-normal;
- let money=(normal*wage)+(ot*wage*otRate);
+ const date = document.getElementById("dateInput").value;
+ const s = document.getElementById("startTime").value;
+ const e = document.getElementById("endTime").value;
+ const br = Number(document.getElementById("breakHours").value||0);
+ const wage = Number(document.getElementById("wage").value||0);
+ const otRate = Number(document.getElementById("otRate").value);
 
- const logs=loadLogs();
+ if(!date || !s || !e) return alert("กรอกข้อมูลให้ครบ");
+
+ let mStart = toMinutes(s);
+ let mEnd = toMinutes(e);
+
+ if(mEnd < mStart) mEnd += 1440;
+
+ let totalWork = (mEnd - mStart) / 60;
+ let normal = totalWork - br;
+ if(normal < 0) normal = 0;
+
+ let ot = totalWork - normal;
+ let money = (normal*wage) + (ot*wage*otRate);
+
+ const logs = loadLogs();
  logs.push({date,start:s,end:e,otHours:ot,total:money});
  saveLogs(logs);
+
  render();
- startTime.value=""; endTime.value="";
+
+ document.getElementById("startTime").value="";
+ document.getElementById("endTime").value="";
 };
 
-clearBtn.onclick=()=>{ if(confirm("ลบทั้งหมด?")){ localStorage.removeItem(key); render(); } }
+document.getElementById("clearBtn").onclick=()=>{
+ if(confirm("ลบทั้งหมด?")){
+   localStorage.removeItem(key);
+   render();
+ }
+};
 
-exportBtn.onclick=()=>{
- const logs=loadLogs(); if(!logs.length) return alert("ไม่มีข้อมูล");
+document.getElementById("exportBtn").onclick=()=>{
+ const logs=loadLogs();
+ if(!logs.length) return alert("ไม่มีข้อมูล");
+
  let csv="ลำดับ,วันที่,เข้า,ออก,OT(ชม.),รวม(บาท)\n";
- logs.forEach((l,i)=>{ csv+=`${i+1},${l.date},${l.start},${l.end},${l.otHours},${l.total}\n`; });
+ logs.forEach((l,i)=>{
+   csv+=`${i+1},${l.date},${l.start},${l.end},${l.otHours},${l.total}\n`;
+ });
+
  const blob=new Blob([csv],{type:"text/csv"});
  const url=URL.createObjectURL(blob);
- const a=document.createElement("a"); a.href=url; a.download="worklog.csv"; a.click(); URL.revokeObjectURL(url);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="worklog.csv";
+ a.click();
+ URL.revokeObjectURL(url);
 };
 
 render();
