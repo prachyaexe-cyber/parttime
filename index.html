@@ -192,9 +192,7 @@
         📊 สรุปรวมทั้งหมด
     </h3>
     <div id="summaryContainer">
-        <p><strong>ชั่วโมงทำงานรวมทั้งหมด:</strong> 0.00 ชั่วโมง</p>
-        <p><strong>รายได้รวมทั้งหมด:</strong> 0.00 บาท</p>
-    </div>
+        </div>
 
     <button class="btn-add" onclick="exportToCSV()" style="margin-top: 20px;">
         💾 ดึงไฟล์ CSV (ตามรูปแบบที่กำหนด)
@@ -205,29 +203,40 @@
     let timeEntries = [];
     let currentId = 1;
 
+    // --- HELPER FUNCTION: แปลงชั่วโมงทศนิยม เป็น "ชั่วโมง นาที" ---
+    function formatHoursToHHMM(decimalHours) {
+        if (decimalHours <= 0) return '0 ชั่วโมง 0 นาที';
+        
+        // 1. หาจำนวนชั่วโมงเต็ม
+        const hours = Math.floor(decimalHours);
+        
+        // 2. หาส่วนทศนิยม และแปลงเป็นนาที (ปัดเศษนาที)
+        const minutesDecimal = decimalHours - hours;
+        const minutes = Math.round(minutesDecimal * 60);
+
+        // จัดการกรณีที่ปัดเศษนาทีแล้วครบ 60 นาที
+        if (minutes === 60) {
+            return `${hours + 1} ชั่วโมง 0 นาที`;
+        }
+        
+        return `${hours} ชั่วโมง ${minutes} นาที`;
+    }
+
     // --- 1. เพิ่มเครื่องหมาย ":" อัตโนมัติและตรวจสอบรูปแบบเวลา ---
     function formatTimeInput(event) {
         const input = event.target;
-        let value = input.value.replace(/[^0-9]/g, ''); // ลบอักขระที่ไม่ใช่ตัวเลข
+        let value = input.value.replace(/[^0-9]/g, ''); 
         
         if (value.length > 4) {
             value = value.substring(0, 4);
         }
-
         if (value.length >= 2) {
             let hour = parseInt(value.substring(0, 2));
-            if (hour > 23) {
-                // หากพิมพ์ชั่วโมงเกิน 23 ให้ปรับเป็น 23
-                value = '23' + value.substring(2); 
-            }
+            if (hour > 23) { value = '23' + value.substring(2); }
         }
-
         if (value.length >= 4) {
             let minute = parseInt(value.substring(2, 4));
-            if (minute > 59) {
-                // หากพิมพ์นาทีเกิน 59 ให้ปรับเป็น 59
-                value = value.substring(0, 2) + '59'; 
-            }
+            if (minute > 59) { value = value.substring(0, 2) + '59'; }
         }
 
         if (value.length > 2) {
@@ -242,27 +251,20 @@
 
     // --- 2. ฟังก์ชันคำนวณชั่วโมงและรายได้ ---
     function calculateEarnings(entry) {
-        // ใช้ 2000/01/01 เป็นฐานการคำนวณ
         const dateBase = '2000/01/01';
         let timeIn = new Date(`${dateBase} ${entry.timeIn}`);
         let timeOut = new Date(`${dateBase} ${entry.timeOut}`);
 
-        // กรณีข้ามวัน (เวลาออกน้อยกว่าเวลาเข้า) ให้บวก 24 ชม.
         if (timeOut.getTime() <= timeIn.getTime()) {
             timeOut.setDate(timeOut.getDate() + 1);
         }
 
-        // เวลาทำงานรวมเป็นมิลลิวินาที
         const durationMs = timeOut.getTime() - timeIn.getTime();
-        
-        // เวลาทำงานรวมเป็นนาที
         let totalMinutes = durationMs / (1000 * 60);
 
-        // หักเวลาพัก (นาที)
         const workingMinutes = totalMinutes - entry.breakTime;
-        const workingHours = Math.max(0, workingMinutes / 60); // ไม่ให้ชั่วโมงติดลบ
+        const workingHours = Math.max(0, workingMinutes / 60);
 
-        // การคำนวณรายได้ (สมมติ 8 ชั่วโมงแรกเป็นชั่วโมงปกติ)
         const standardHours = Math.min(workingHours, 8);
         const otHours = Math.max(0, workingHours - 8);
 
@@ -277,7 +279,7 @@
         };
     }
 
-    // --- 3. เพิ่ม/แก้ไข รายการใหม่ ---
+    // --- 3. เพิ่มรายการใหม่ ---
     function addTimeEntry() {
         const date = document.getElementById('dateInput').value;
         const timeIn = document.getElementById('timeIn').value;
@@ -303,7 +305,6 @@
 
         timeEntries.push(newEntry);
         renderTable();
-        // ล้างค่าในฟอร์ม (คงค่า Rate/OT ไว้)
         document.getElementById('dateInput').value = '';
         document.getElementById('timeIn').value = '';
         document.getElementById('timeOut').value = '';
@@ -318,16 +319,18 @@
             const result = calculateEarnings(entry);
             const row = body.insertRow();
             
-            row.insertCell().textContent = index + 1; // ลำดับ
+            row.insertCell().textContent = index + 1;
             row.insertCell().textContent = entry.date;
             row.insertCell().textContent = entry.timeIn;
             row.insertCell().textContent = entry.timeOut;
             row.insertCell().textContent = entry.breakTime;
             row.insertCell().textContent = entry.otMultiplier.toFixed(1);
-            row.insertCell().textContent = result.workingHours.toFixed(2); // ชั่วโมงรวม
-            row.insertCell().textContent = result.totalEarnings.toFixed(2); // รายได้รวม
             
-            // ปุ่มจัดการ
+            // ใช้ฟังก์ชันแปลงหน่วยเวลา
+            row.insertCell().textContent = formatHoursToHHMM(result.workingHours); 
+            
+            row.insertCell().textContent = result.totalEarnings.toFixed(2);
+            
             const actionCell = row.insertCell();
             actionCell.innerHTML = `
                 <button class="btn-action btn-edit" onclick="editEntry(${entry.id})">แก้ไข</button>
@@ -338,7 +341,9 @@
         updateSummary();
     }
 
-    // --- 5. ลบรายการ ---
+    // --- 5. ลบรายการ / 6. แก้ไขรายการ (ใช้ Prompt) / 7. Export CSV (ยังคงเดิม)
+    // ... (ส่วนโค้ดเหล่านี้เหมือนเดิม แต่จะเรียก renderTable() ทำให้ summary อัปเดตอัตโนมัติ) ...
+
     function deleteEntry(id) {
         if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
             timeEntries = timeEntries.filter(entry => entry.id !== id);
@@ -346,12 +351,10 @@
         }
     }
 
-    // --- 6. แก้ไขรายการ (ใช้ Prompt เพื่อความง่าย) ---
     function editEntry(id) {
         const entry = timeEntries.find(e => e.id === id);
         if (!entry) return;
 
-        // ดึงค่าปัจจุบันมาใส่ใน Prompt
         const newDate = prompt(`แก้ไข วันที่:`, entry.date);
         const newTimeIn = prompt(`แก้ไข เวลาเข้า (HH:MM):`, entry.timeIn);
         const newTimeOut = prompt(`แก้ไข เวลาออก (HH:MM):`, entry.timeOut);
@@ -359,7 +362,6 @@
         const newRate = prompt(`แก้ไข ค่าแรง/ชม.:`, entry.hourlyRate);
         const newOT = prompt(`แก้ไข OT (ตัวคูณ):`, entry.otMultiplier);
 
-        // ตรวจสอบความถูกต้องเบื้องต้นก่อนอัปเดต
         if (newDate && newTimeIn && newTimeOut && newBreak !== null && newRate && newOT) {
              entry.date = newDate;
              entry.timeIn = newTimeIn;
@@ -371,28 +373,33 @@
             renderTable();
         }
     }
-
-    // --- 7. อัปเดตสรุปรวมทั้งหมด ---
+    
+    // --- 8. อัปเดตสรุปรวมทั้งหมด (เพิ่มจำนวนวันรวม) ---
     function updateSummary() {
         let totalHours = 0;
         let totalEarnings = 0;
+        const uniqueDates = new Set(); // ใช้นับวันที่ไม่ซ้ำกัน
 
         timeEntries.forEach(entry => {
             const result = calculateEarnings(entry);
             totalHours += result.workingHours;
             totalEarnings += result.totalEarnings;
+            uniqueDates.add(entry.date); // เพิ่มวันที่เข้าไป
         });
+
+        const totalDays = uniqueDates.size;
+        const formattedTotalHours = formatHoursToHHMM(totalHours); // แปลงชั่วโมงรวมเป็น H:M
 
         const summaryDiv = document.getElementById('summaryContainer');
         summaryDiv.innerHTML = `
-            <p><strong>ชั่วโมงทำงานรวมทั้งหมด:</strong> ${totalHours.toFixed(2)} ชั่วโมง</p>
+            <p><strong>จำนวนวันรวมที่บันทึก:</strong> ${totalDays} วัน</p>
+            <p><strong>ชั่วโมงทำงานรวมทั้งหมด:</strong> ${formattedTotalHours}</p>
             <p><strong>รายได้รวมทั้งหมด:</strong> ${totalEarnings.toFixed(2)} บาท</p>
         `;
     }
-    
-    // --- 8. Export ข้อมูลเป็น CSV (ตามรูปแบบที่กำหนด) ---
+
+    // --- 9. Export ข้อมูลเป็น CSV ---
     function exportToCSV() {
-        // หัวตาราง: ลำดับ,วันที่,เวลาเข้า,เวลาออก,ot (ตัวคูณ),รวม
         let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
         let header = ["ลำดับ", "วันที่", "เวลาเข้า", "เวลาออก", "OT (ตัวคูณ)", "รายได้รวม (บาท)"];
         csvContent += header.join(",") + "\n";
@@ -419,7 +426,6 @@
         document.body.removeChild(link);
     }
     
-    // ตั้งค่าเริ่มต้นเมื่อโหลดหน้าเว็บ
     updateSummary(); 
 </script>
 
