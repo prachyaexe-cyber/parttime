@@ -3,29 +3,41 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>บันทึกเวลา + OT + พัก</title>
+<title>บันทึกเวลา & คำนวณค่าแรง + OT</title>
 <style>
  body{margin:0;background:#071428;color:#e6eef6;font-family:Inter,system-ui,'Noto Sans Thai',sans-serif;padding:24px}
  .container{max-width:1100px;margin:auto}
  h1{margin:0 0 16px 0;font-size:22px}
  label{font-size:13px;color:#aab4c3}
  input,select{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:14px}
+ /* ปรับ Grid ใหม่ให้เข้ากับ UI รูปภาพ */
  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
  .card{background:#0b1220;padding:20px;border-radius:14px;margin-bottom:18px;box-shadow:0 6px 20px rgba(0,0,0,0.4)}
  button{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-size:14px}
  .primary{background:#06b6d4;color:#042022}
  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#aab4c3}
- .danger-btn{background:#ef4444;color:#042022;padding:6px 10px;font-size:12px} /* ปุ่มลบ */
+ .danger-btn{background:#ef4444;color:#042022;padding:6px 10px;font-size:12px}
+ 
+ /* จัด Layout ปุ่มด้านล่างให้ตรงกับรูป */
+ .control-section{display:flex;align-items:center;margin-top:16px}
+ .control-section .select-group{flex-grow:1}
+ .control-section .button-group{display:flex;gap:10px;margin-left:auto}
+
  table{width:100%;border-collapse:collapse;margin-top:12px}
  th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:14px}
  th{color:#8f9bad;font-size:13px}
  .right{text-align:right}
- @media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+ 
+ @media(max-width:760px){
+   .grid{grid-template-columns:repeat(2,1fr)}
+   .control-section{flex-direction:column;align-items:stretch}
+   .control-section .button-group{margin-top:10px;margin-left:0}
+ }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>บันทึกเวลา & คำนวณค่าแรง + OT + หักพัก</h1>
+<h1>บันทึกเวลา & คำนวณค่าแรง + OT</h1>
 
 <div class="card">
  <div class="grid">
@@ -42,17 +54,14 @@
      <input type="text" id="endTime" placeholder="HH:MM" maxlength="5">
    </div>
    <div>
-     <label>หักเวลาพัก (ช.ม.)</label>
-     <input type="number" id="breakHours" value="1" min="0" step="0.5">
+     <label>ค่าแรงต่อชั่วโมง (บาท)</label>
+     <input type="number" id="wage" value="50">
+          <input type="hidden" id="breakHours" value="1"> 
    </div>
  </div>
 
- <div class="grid" style="margin-top:14px">
-   <div>
-     <label>ค่าชั่วโมง (บาท)</label>
-     <input type="number" id="wage" value="50">
-   </div>
-   <div>
+ <div class="control-section">
+   <div class="select-group">
      <label>OT Rate</label>
      <select id="otRate">
        <option value="1.5">OT x1.5</option>
@@ -60,24 +69,24 @@
        <option value="2.25">OT x2.25</option>
      </select>
    </div>
- </div>
-
- <div style="margin-top:16px;display:flex;gap:10px">
-   <button class="primary" id="addBtn">บันทึก</button>
-   <button class="ghost" id="clearBtn">ล้างทั้งหมด</button>
-   <button class="ghost" id="exportBtn">Export CSV</button>
+   
+   <div class="button-group">
+     <button class="primary" id="addBtn">บันทึก</button>
+     <button class="ghost" id="clearBtn">ลบทั้งหมด</button>
+     <button class="ghost" id="exportBtn">Export CSV</button>
+   </div>
  </div>
 </div>
 
 <div class="card">
- <h3>สรุป</h3>
+ <h3>สรุปรายได้</h3>
  <p>รวมวันทำงาน: <strong id="totalDays">0</strong> วัน</p>
  <p>รวม OT: <strong id="totalOT">0.00</strong> ชม.</p>
  <p>รวมรายได้ทั้งหมด: <strong id="totalIncome">0.00</strong> บาท</p>
 </div>
 
 <div class="card">
- <h3>ประวัติงาน</h3>
+ <h3>ประวัติการทำงาน</h3>
  <table>
    <thead>
      <tr>
@@ -121,10 +130,10 @@ function toMinutes(t){
  return h*60+m;
 }
 
-// **ฟังก์ชันใหม่สำหรับลบรายการ**
+// **ฟังก์ชันใหม่สำหรับลบรายการ** (ตามที่ร้องขอ)
 function deleteLog(index){
  const logs = loadLogs();
- if(index >= 0 && index < logs.length){
+ if(confirm(`ยืนยันการลบรายการที่ ${index + 1}?`)){
    logs.splice(index, 1);
    saveLogs(logs);
    render();
@@ -149,7 +158,8 @@ function render(){
        <td>${l.end}</td>
        <td>${l.otHours.toFixed(2)}</td>
        <td class="right">${l.total.toFixed(2)}</td>
-       <td><button class="danger-btn" onclick="deleteLog(${i})">ลบ</button></td>      </tr>
+       <td><button class="danger-btn" onclick="deleteLog(${i})">ลบ</button></td>
+     </tr>
    `;
  });
 
@@ -163,31 +173,24 @@ document.getElementById("addBtn").onclick=()=>{
  const date = document.getElementById("dateInput").value;
  const s = document.getElementById("startTime").value;
  const e = document.getElementById("endTime").value;
- const br = Number(document.getElementById("breakHours").value||0);
+ // ดึงค่าเวลาพักจาก input hidden (ค่าคือ 1 ชั่วโมง)
+ const br = Number(document.getElementById("breakHours").value||1); 
  const wage = Number(document.getElementById("wage").value||0);
  const otRate = Number(document.getElementById("otRate").value);
 
- if(!date || !s || !e) return alert("กรอกข้อมูลให้ครบ");
+ if(!date || !s || !e) return alert("กรุณาใส่ วันที่ เวลาเข้า และเวลาออก ให้ครบถ้วน");
 
  let mStart = toMinutes(s);
  let mEnd = toMinutes(e);
 
  if(mEnd < mStart) mEnd += 1440; // ข้ามวัน
 
- let totalWork = (mEnd - mStart) / 60; // ชั่วโมงทำงานทั้งหมด
- let normal = totalWork - br; // ชั่วโมงทำงานปกติ (รวม OT) หลังหักพัก
- if(normal < 0) normal = 0;
-
- let ot = totalWork > 8 ? totalWork - 8 - br : 0; // สมมติ 8 ชม. คือ ชม. ทำงานปกติ
- if(ot < 0) ot = 0;
-
- // การคำนวณที่เหมาะสม: ชั่วโมงทำงานปกติคือ totalWork - breakHours - ot
- // แต่จากโค้ดเดิม น่าจะต้องการให้ totalWork - breakHours คือรวมชั่วโมงทำงานทั้งหมด (รวม OT)
+ let totalWork = (mEnd - mStart) / 60; // ชั่วโมงทำงานทั้งหมด (Gross hours)
  
- // **ปรับการคำนวณ OT ให้ชัดเจนขึ้น**
- const NORMAL_HOURS_LIMIT = 8; // กำหนดชั่วโมงทำงานปกติ (เช่น 8 ชั่วโมง)
+ // **การคำนวณ: หักเวลาพัก 1 ชั่วโมง (br=1) และแยก OT**
+ const NORMAL_HOURS_LIMIT = 8; 
 
- let totalHours = totalWork - br; // ชั่วโมงทำงานสุทธิ (หักพักแล้ว)
+ let totalHours = totalWork - br; // ชั่วโมงทำงานสุทธิ (Net hours)
  if(totalHours < 0) totalHours = 0;
  
  let normalHours = Math.min(totalHours, NORMAL_HOURS_LIMIT);
@@ -197,7 +200,6 @@ document.getElementById("addBtn").onclick=()=>{
  let money = (normalHours * wage) + (otHours * wage * otRate);
 
  const logs = loadLogs();
- // logs.push({date,start:s,end:e,otHours:ot,total:money}); // โค้ดเดิม
  logs.push({date,start:s,end:e,otHours:otHours,total:money});
  saveLogs(logs);
 
@@ -208,7 +210,7 @@ document.getElementById("addBtn").onclick=()=>{
 };
 
 document.getElementById("clearBtn").onclick=()=>{
- if(confirm("ลบทั้งหมด?")){
+ if(confirm("ยืนยันการลบประวัติงานทั้งหมด?")){
    localStorage.removeItem(key);
    render();
  }
@@ -216,19 +218,23 @@ document.getElementById("clearBtn").onclick=()=>{
 
 document.getElementById("exportBtn").onclick=()=>{
  const logs=loadLogs();
- if(!logs.length) return alert("ไม่มีข้อมูล");
+ if(!logs.length) return alert("ไม่มีข้อมูลที่จะ Export");
 
  let csv="ลำดับ,วันที่,เข้า,ออก,OT(ชม.),รวม(บาท)\n";
  logs.forEach((l,i)=>{
-   csv+=`${i+1},${l.date},${l.start},${l.end},${l.otHours},${l.total}\n`;
+   // ใช้ toFixed(2) ใน CSV เพื่อให้รูปแบบตัวเลขสม่ำเสมอ
+   csv+=`${i+1},${l.date},${l.start},${l.end},${l.otHours.toFixed(2)},${l.total.toFixed(2)}\n`;
  });
 
- const blob=new Blob([csv],{type:"text/csv"});
+ const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
  const url=URL.createObjectURL(blob);
  const a=document.createElement("a");
  a.href=url;
  a.download="worklog.csv";
+ a.style.display='none'; // ซ่อน element
+ document.body.appendChild(a);
  a.click();
+ document.body.removeChild(a); // ลบ element ออก
  URL.revokeObjectURL(url);
 };
 
