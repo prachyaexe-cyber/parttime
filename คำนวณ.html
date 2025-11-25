@@ -2,124 +2,132 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>คิดค่าแรง + OT</title>
+<title>ระบบคำนวณค่าแรง Full-Time</title>
 <style>
-    body { font-family: Tahoma, sans-serif; padding: 20px; max-width: 450px; margin: auto; }
-    label { display: block; margin-top: 8px; }
-    input { padding: 6px; width: 100%; margin-top: 3px; font-size: 16px; }
-    button { margin-top: 10px; padding: 10px; width: 100%; font-size: 16px; }
+    body { font-family: sans-serif; max-width: 850px; margin: auto; padding: 20px; }
+    input, select, button { padding: 6px; margin: 4px 0; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #999; padding: 6px; text-align: center; }
     .row { display: flex; gap: 10px; }
-    .row .col { flex: 1; }
-    table { width: 100%; margin-top: 15px; border-collapse: collapse; }
-    table, th, td { border: 1px solid #aaa; }
-    th, td { padding: 5px; text-align: center; font-size: 14px; }
+    .col { flex: 1; }
 </style>
 </head>
 <body>
 
-<h2>ระบบคิดค่าแรง + OT</h2>
-
-<label>วันที่</label>
-<input type="date" id="date">
+<h2>โปรแกรมคำนวณค่าแรง Full-Time (วันละ 500 บาท)</h2>
 
 <div class="row">
-  <div class="col">
-    <label>เวลาเข้า</label>
-    <input type="text" id="start" placeholder="เช่น 09:00" maxlength="5">
-  </div>
-  <div class="col">
-    <label>เวลาออก</label>
-    <input type="text" id="end" placeholder="เช่น 17:30" maxlength="5">
-  </div>
+    <div class="col">
+        วันที่:<br>
+        <input type="date" id="workDate">
+    </div>
+    <div class="col">
+        เวลาเข้า:<br>
+        <input type="text" id="startTime" placeholder="เช่น 08:00" maxlength="5">
+    </div>
+    <div class="col">
+        เวลาออก:<br>
+        <input type="text" id="endTime" placeholder="เช่น 17:00" maxlength="5">
+    </div>
+    <div class="col">
+        OT:<br>
+        <select id="otRate">
+            <option value="0">ไม่ทำ OT</option>
+            <option value="1.5">1.5</option>
+            <option value="2.0">2.0</option>
+            <option value="2.25">2.25</option>
+        </select>
+    </div>
 </div>
 
-<button onclick="addLog()">บันทึกการทำงาน</button>
-<button onclick="downloadCSV()">ดาวน์โหลดสรุปงาน (CSV)</button>
+<button onclick="saveRecord()">บันทึกข้อมูล</button>
 
-<h3>ประวัติ</h3>
-<table>
-  <thead>
-    <tr>
-      <th>ลำดับ</th>
-      <th>วันที่</th>
-      <th>เข้า</th>
-      <th>ออก</th>
-      <th>OT</th>
-      <th>รวม</th>
-    </tr>
-  </thead>
-  <tbody id="logTable"></tbody>
+<h3>ประวัติการทำงาน</h3>
+<table id="recordTable">
+    <thead>
+        <tr>
+            <th>ลำดับ</th>
+            <th>วันที่</th>
+            <th>เวลาเข้า</th>
+            <th>เวลาออก</th>
+            <th>OT</th>
+            <th>รวม(บาท)</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
 </table>
 
+<button onclick="exportCSV()">📁 ดาวน์โหลด CSV</button>
+
+<h3>สรุปรวม</h3>
+<p id="summary">รวมวันทำงาน: 0 วัน / OT: 0 ชม. / รวมรายได้: 0 บาท</p>
+
 <script>
-let logs = JSON.parse(localStorage.getItem("wageLogs") || "[]");
-const rate = 50; // ค่าชั่วโมง
-const normalHours = 8; // ชั่วโมงปกติ/วัน
-const otRate = 1.5; // เรท OT = 1.5 เท่า
+let records = [];
 
-function autoTimeFormat(input){
-    input.addEventListener("input", e=>{
-        let v = e.target.value.replace(/[^0-9]/g,"");
-        if(v.length >= 3) e.target.value = v.slice(0,2) + ":" + v.slice(2,4);
-        else e.target.value = v;
+document.querySelectorAll("#startTime, #endTime").forEach(input => {
+    input.addEventListener("input", (e) => {
+        let v = e.target.value.replace(/[^0-9]/g, "");
+        if (v.length >= 3) v = v.slice(0,2) + ":" + v.slice(2,4);
+        e.target.value = v;
     });
-}
-autoTimeFormat(start);
-autoTimeFormat(end);
+});
 
-function calcMinutes(t){
-    const [h,m] = t.split(":").map(Number);
-    return h*60 + m;
-}
+function saveRecord() {
+    const date = document.getElementById("workDate").value;
+    const start = document.getElementById("startTime").value;
+    const end = document.getElementById("endTime").value;
+    const ot = parseFloat(document.getElementById("otRate").value);
 
-function addLog(){
-    let date = document.getElementById("date").value;
-    let start = document.getElementById("start").value;
-    let end = document.getElementById("end").value;
-    if(!date || !start || !end) return alert("กรุณากรอกข้อมูลให้ครบ");
+    if(!date || !start || !end){
+        alert("กรุณากรอกวันที่ และเวลาเข้า-ออกให้ครบ");
+        return;
+    }
 
-    let workMin = calcMinutes(end) - calcMinutes(start);
-    if(workMin <= 0) return alert("เวลาไม่ถูกต้อง");
+    const sum = 500 + (ot > 0 ? (ot * 50) : 0); // OT: ชม.ละ 50 บาท
 
-    let workHours = workMin / 60;
-    let otHours = Math.max(0, workHours - normalHours);
-    let normalPay = Math.min(workHours, normalHours) * rate;
-    let otPay = otHours * rate * otRate;
-    let total = normalPay + otPay;
-
-    logs.push({date,start,end,ot: otHours.toFixed(2), total: total.toFixed(2)});
-    localStorage.setItem("wageLogs", JSON.stringify(logs));
+    records.push({ date, start, end, ot, sum });
     renderTable();
 }
 
-function renderTable(){
-    const tb = document.getElementById("logTable");
-    tb.innerHTML = "";
-    logs.forEach((l,i)=>{
-        tb.innerHTML += `<tr>
+function renderTable() {
+    const tbody = document.querySelector("#recordTable tbody");
+    tbody.innerHTML = "";
+    let total = 0, otTotal = 0;
+
+    records.forEach((r, i) => {
+        total += r.sum;
+        otTotal += r.ot > 0 ? r.ot : 0;
+
+        tbody.innerHTML += `
+        <tr>
             <td>${i+1}</td>
-            <td>${l.date}</td>
-            <td>${l.start}</td>
-            <td>${l.end}</td>
-            <td>${l.ot}</td>
-            <td>${l.total}</td>
+            <td>${r.date}</td>
+            <td>${r.start}</td>
+            <td>${r.end}</td>
+            <td>${r.ot == 0 ? "-" : r.ot}</td>
+            <td>${r.sum}</td>
         </tr>`;
     });
-}
-renderTable();
 
-function downloadCSV(){
-    let csv = "ลำดับ,วันที่,เข้า,ออก,OT,รวม\n";
-    logs.forEach((l,i)=>{
-        csv += `${i+1},${l.date},${l.start},${l.end},${l.ot},${l.total}\n`;
+    document.getElementById("summary").innerText =
+        `รวมวันทำงาน: ${records.length} วัน / OT: ${otTotal.toFixed(2)} ชม. / รวมรายได้: ${total} บาท`;
+}
+
+function exportCSV() {
+    let csv = "ลำดับ,วันที่,เวลาเข้า,เวลาออก,OT,รวม\n";
+    records.forEach((r,i)=>{
+        csv += `${i+1},${r.date},${r.start},${r.end},${r.ot},${r.sum}\n`;
     });
-    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement("a");
+
+    const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
     a.href = url;
-    a.download = "สรุปค่าแรงOT.csv";
+    a.download = "work_record.csv";
     a.click();
 }
 </script>
+
 </body>
 </html>
