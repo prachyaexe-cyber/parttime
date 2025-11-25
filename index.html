@@ -26,6 +26,22 @@
         .btn-action { margin: 2px; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; }
         .btn-edit { background-color: #2196F3; }
         .btn-delete { background-color: #f44336; }
+
+        /* สรุปผลรวม */
+        #summarySection { 
+            margin-top: 30px; 
+            padding: 15px; 
+            border: 1px solid #ccc; 
+            background-color: #e9e9f1; 
+            border-radius: 4px;
+        }
+        #summarySection p {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+        #summarySection strong {
+            color: #004d40;
+        }
     </style>
 </head>
 <body>
@@ -86,6 +102,12 @@
         <tbody id="timeTableBody">
             </tbody>
     </table>
+    
+    <div id="summarySection">
+        <h3>สรุปผลรวมทั้งหมด</h3>
+        <p><strong>รวมชั่วโมงทำงานสะสม:</strong> <span id="totalHoursSummary">0.00</span> ชั่วโมง</p>
+        <p><strong>รวมรายได้สะสมทั้งหมด:</strong> <span id="totalEarningsSummary">0.00</span> บาท</p>
+    </div>
 
     <button class="btn-add" onclick="exportToCSV()" style="margin-top: 20px;">
         💾 ดึงไฟล์ CSV
@@ -100,13 +122,13 @@
     // --- ฟังก์ชัน 1: เพิ่มเครื่องหมาย ":" อัตโนมัติ ---
     function formatTimeInput(event) {
         const input = event.target;
-        let value = input.value.replace(/:/g, ''); // ลบ ":" เก่าออก
+        let value = input.value.replace(/:/g, ''); 
         
         if (value.length > 2) {
             value = value.substring(0, 2) + ':' + value.substring(2);
         }
         
-        if (value.length > 5) { // จำกัดไม่ให้เกิน HH:MM
+        if (value.length > 5) { 
             value = value.substring(0, 5);
         }
         input.value = value;
@@ -117,9 +139,14 @@
 
     // --- ฟังก์ชัน 2: คำนวณชั่วโมงและรายได้ ---
     function calculateEarnings(entry) {
+        // ต้องตรวจสอบรูปแบบเวลาที่ถูกต้อง
+        if (!/^\d{2}:\d{2}$/.test(entry.timeIn) || !/^\d{2}:\d{2}$/.test(entry.timeOut)) {
+            return { workingHours: 0.00, totalEarnings: 0.00 };
+        }
+        
+        // สร้างวันที่สมมติ
         const timeIn = new Date(`2000/01/01 ${entry.timeIn}`);
-        const timeOut = new Date(`2000/01/01 ${entry.timeOut}`);
-        const breakMs = entry.breakTime * 60 * 1000;
+        let timeOut = new Date(`2000/01/01 ${entry.timeOut}`);
         
         // คำนวณเวลาทำงาน (เป็นนาที)
         let totalMinutes = (timeOut - timeIn) / (1000 * 60);
@@ -130,9 +157,9 @@
         }
 
         const workingMinutes = totalMinutes - entry.breakTime;
-        const workingHours = workingMinutes / 60;
+        const workingHours = Math.max(0, workingMinutes / 60); // ไม่ให้ชั่วโมงทำงานติดลบ
 
-        // รายได้ (สมมติว่าชั่วโมงทำงานปกติ < 8 ชม. ที่เหลือเป็น OT)
+        // รายได้ (สมมติว่าชั่วโมงทำงานปกติ 8 ชม. ที่เหลือเป็น OT)
         const standardHours = Math.min(workingHours, 8);
         const otHours = Math.max(0, workingHours - 8);
 
@@ -142,8 +169,8 @@
         const totalEarnings = standardPay + otPay;
 
         return {
-            workingHours: workingHours.toFixed(2),
-            totalEarnings: totalEarnings.toFixed(2)
+            workingHours: workingHours,
+            totalEarnings: totalEarnings
         };
     }
 
@@ -173,6 +200,8 @@
 
         timeEntries.push(newEntry);
         renderTable();
+        renderSummary(); // อัปเดตสรุปผลรวม
+        
         // ล้างค่าในฟอร์ม ยกเว้น Rate/OT
         document.getElementById('dateInput').value = '';
         document.getElementById('timeIn').value = '';
@@ -195,8 +224,8 @@
             row.insertCell().textContent = entry.timeOut;
             row.insertCell().textContent = entry.breakTime;
             row.insertCell().textContent = entry.otMultiplier;
-            row.insertCell().textContent = result.workingHours;
-            row.insertCell().textContent = result.totalEarnings;
+            row.insertCell().textContent = result.workingHours.toFixed(2); // ชั่วโมงรวม
+            row.insertCell().textContent = result.totalEarnings.toFixed(2);
             
             // ช่องสำหรับปุ่ม แก้ไข/ลบ
             const actionCell = row.insertCell();
@@ -207,15 +236,31 @@
         });
     }
 
-    // --- ฟังก์ชัน 5: ลบรายการ ---
+    // --- ฟังก์ชัน 5: แสดงผลสรุปทั้งหมด (New Function) ---
+    function renderSummary() {
+        let totalHours = 0;
+        let grandTotalEarnings = 0;
+
+        timeEntries.forEach(entry => {
+            const result = calculateEarnings(entry);
+            totalHours += result.workingHours;
+            grandTotalEarnings += result.totalEarnings;
+        });
+
+        document.getElementById('totalHoursSummary').textContent = totalHours.toFixed(2);
+        document.getElementById('totalEarningsSummary').textContent = grandTotalEarnings.toFixed(2);
+    }
+    
+    // --- ฟังก์ชัน 6: ลบรายการ ---
     function deleteEntry(id) {
         if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
             timeEntries = timeEntries.filter(entry => entry.id !== id);
             renderTable();
+            renderSummary(); // อัปเดตสรุปผลรวม
         }
     }
 
-    // --- ฟังก์ชัน 6: แก้ไขรายการ (แบบง่าย) ---
+    // --- ฟังก์ชัน 7: แก้ไขรายการ (แบบง่าย) ---
     function editEntry(id) {
         const entry = timeEntries.find(e => e.id === id);
         if (!entry) return;
@@ -229,17 +274,18 @@
             entry.date = newDate;
             entry.timeIn = newTimeIn;
             entry.timeOut = newTimeOut;
-            // สามารถเพิ่มการแก้ไข BreakTime, Rate, OT ได้ถ้าต้องการ
+            // *สำคัญ: ต้องแน่ใจว่าค่าที่แก้ไขมีการฟอร์แมตเวลาถูกต้อง เช่น 08:30
             renderTable();
+            renderSummary(); // อัปเดตสรุปผลรวม
         }
     }
 
-    // --- ฟังก์ชัน 7: Export ข้อมูลเป็น CSV ---
+    // --- ฟังก์ชัน 8: Export ข้อมูลเป็น CSV ---
     function exportToCSV() {
         let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF คือ BOM สำหรับรองรับภาษาไทย
 
         // หัวตาราง
-        let header = ["ลำดับ", "วันที่", "เวลาเข้า", "เวลาออก", "OT (ตัวคูณ)", "รายได้รวม (บาท)"];
+        let header = ["ลำดับ", "วันที่", "เวลาเข้า", "เวลาออก", "OT (ตัวคูณ)", "ชั่วโมงรวม", "รายได้รวม (บาท)"];
         csvContent += header.join(",") + "\n";
 
         // ข้อมูล
@@ -251,7 +297,8 @@
                 entry.timeIn,
                 entry.timeOut,
                 entry.otMultiplier,
-                result.totalEarnings
+                result.workingHours.toFixed(2),
+                result.totalEarnings.toFixed(2)
             ];
             csvContent += row.join(",") + "\n";
         });
