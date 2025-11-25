@@ -1,244 +1,136 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>บันทึกเวลา & คำนวณค่าแรง + OT</title>
+<meta charset="UTF-8">
+<title>บันทึกเวลาค่าแรง</title>
 <style>
- body{margin:0;background:#071428;color:#e6eef6;font-family:Inter,system-ui,'Noto Sans Thai',sans-serif;padding:24px}
- .container{max-width:1100px;margin:auto}
- h1{margin:0 0 16px 0;font-size:22px}
- label{font-size:13px;color:#aab4c3}
- input,select{width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:14px}
- /* ปรับ Grid ใหม่ให้เข้ากับ UI รูปภาพ */
- .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
- .card{background:#0b1220;padding:20px;border-radius:14px;margin-bottom:18px;box-shadow:0 6px 20px rgba(0,0,0,0.4)}
- button{padding:10px 14px;border-radius:8px;border:0;cursor:pointer;font-size:14px}
- .primary{background:#06b6d4;color:#042022}
- .ghost{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#aab4c3}
- .danger-btn{background:#ef4444;color:#042022;padding:6px 10px;font-size:12px}
- 
- /* จัด Layout ปุ่มด้านล่างให้ตรงกับรูป */
- .control-section{display:flex;align-items:center;margin-top:16px}
- .control-section .select-group{flex-grow:1}
- .control-section .button-group{display:flex;gap:10px;margin-left:auto}
-
- table{width:100%;border-collapse:collapse;margin-top:12px}
- th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:14px}
- th{color:#8f9bad;font-size:13px}
- .right{text-align:right}
- 
- @media(max-width:760px){
-   .grid{grid-template-columns:repeat(2,1fr)}
-   .control-section{flex-direction:column;align-items:stretch}
-   .control-section .button-group{margin-top:10px;margin-left:0}
- }
+    body { font-family: Tahoma; margin: 20px; }
+    input, select { padding: 6px; margin: 5px; }
+    table { border-collapse: collapse; margin-top: 15px; width: 100%; }
+    th, td { border: 1px solid #444; padding: 6px; text-align: center; }
+    .container { display: flex; gap: 10px; flex-wrap: wrap; }
+    .sumBox { margin-top: 15px; background:#e7e7e7; padding:10px; width:260px; }
 </style>
 </head>
 <body>
+
+<h2>💼 ระบบบันทึกเวลาค่าแรง + OT</h2>
+
 <div class="container">
-<h1>บันทึกเวลา & คำนวณค่าแรง + OT</h1>
-
-<div class="card">
- <div class="grid">
-   <div>
-     <label>วันที่</label>
-     <input type="date" id="dateInput">
-   </div>
-   <div>
-     <label>เวลาเข้า</label>
-     <input type="text" id="startTime" placeholder="HH:MM" maxlength="5">
-   </div>
-   <div>
-     <label>เวลาออก</label>
-     <input type="text" id="endTime" placeholder="HH:MM" maxlength="5">
-   </div>
-   <div>
-     <label>ค่าแรงต่อชั่วโมง (บาท)</label>
-     <input type="number" id="wage" value="50">
-          <input type="hidden" id="breakHours" value="1"> 
-   </div>
- </div>
-
- <div class="control-section">
-   <div class="select-group">
-     <label>OT Rate</label>
-     <select id="otRate">
-       <option value="1.5">OT x1.5</option>
-       <option value="2.0">OT x2.0</option>
-       <option value="2.25">OT x2.25</option>
-     </select>
-   </div>
-   
-   <div class="button-group">
-     <button class="primary" id="addBtn">บันทึก</button>
-     <button class="ghost" id="clearBtn">ลบทั้งหมด</button>
-     <button class="ghost" id="exportBtn">Export CSV</button>
-   </div>
- </div>
+    <div>
+        วันที่: <input type="date" id="dateInput">
+    </div>
+    <div>
+        เวลาเข้า: <input type="text" id="startInput" placeholder="เช่น 09:00" maxlength="5">
+    </div>
+    <div>
+        เวลาออก: <input type="text" id="endInput" placeholder="เช่น 17:30" maxlength="5">
+    </div>
+    <div>
+        ค่าแรง/ชม: <input type="number" id="rateInput" value="50">
+    </div>
+    <div>
+        OT: 
+        <select id="otRate">
+            <option value="0">ไม่มี OT</option>
+            <option value="1.5">1.5</option>
+            <option value="2.0">2.0</option>
+            <option value="2.25">2.25</option>
+        </select>
+    </div>
 </div>
 
-<div class="card">
- <h3>สรุปรายได้</h3>
- <p>รวมวันทำงาน: <strong id="totalDays">0</strong> วัน</p>
- <p>รวม OT: <strong id="totalOT">0.00</strong> ชม.</p>
- <p>รวมรายได้ทั้งหมด: <strong id="totalIncome">0.00</strong> บาท</p>
-</div>
+<button onclick="saveData()">บันทึกข้อมูล</button>
 
-<div class="card">
- <h3>ประวัติการทำงาน</h3>
- <table>
-   <thead>
-     <tr>
-       <th>ลำดับ</th>
-       <th>วันที่</th>
-       <th>เข้า</th>
-       <th>ออก</th>
-       <th>OT (ชม.)</th>
-       <th class="right">รวม (บาท)</th>
-       <th></th>      </tr>
-   </thead>
-   <tbody id="logBody"></tbody>
- </table>
-</div>
+<table id="dataTable">
+    <thead>
+        <tr>
+            <th>ลำดับ</th>
+            <th>วันที่</th>
+            <th>เวลาเข้า</th>
+            <th>เวลาออก</th>
+            <th>ชั่วโมงปกติ</th>
+            <th>OT</th>
+            <th>รวมเงิน (บาท)</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div class="sumBox">
+    รวมวันทำงาน: <span id="totalDays">0</span> วัน<br>
+    รวมชั่วโมง OT: <span id="totalOT">0</span> ชม.<br>
+    รวมเงินทั้งหมด: <span id="totalMoney">0</span> บาท
 </div>
 
 <script>
-const key = "worklog_cloud_v1";
+let records = [];
 
-function loadLogs(){ 
-    try{ return JSON.parse(localStorage.getItem(key)) || [] }catch{return []}
-}
-function saveLogs(list){ 
-    localStorage.setItem(key,JSON.stringify(list)); 
+function autoTimeColon(input){
+    if(input.value.length === 2 && !input.value.includes(":")){
+        input.value = input.value + ":";
+    }
 }
 
-function autoTime(input){
- input.addEventListener("input",()=>{
-   let v=input.value.replace(/[^0-9]/g,"");
-   if(v.length>=3) input.value=v.substring(0,2)+":"+v.substring(2,4);
-   else input.value=v;
- });
-}
-const startTime = document.getElementById("startTime");
-const endTime = document.getElementById("endTime");
-autoTime(startTime);
-autoTime(endTime);
+document.getElementById("startInput").addEventListener("input", e => autoTimeColon(e.target));
+document.getElementById("endInput").addEventListener("input", e => autoTimeColon(e.target));
 
 function toMinutes(t){
- let [h,m]=t.split(":").map(Number);
- return h*60+m;
+    let [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
 }
 
-// **ฟังก์ชันใหม่สำหรับลบรายการ** (ตามที่ร้องขอ)
-function deleteLog(index){
- const logs = loadLogs();
- if(confirm(`ยืนยันการลบรายการที่ ${index + 1}?`)){
-   logs.splice(index, 1);
-   saveLogs(logs);
-   render();
- }
+function saveData(){
+    const date = document.getElementById("dateInput").value;
+    const start = document.getElementById("startInput").value;
+    const end = document.getElementById("endInput").value;
+    const rate = Number(document.getElementById("rateInput").value);
+    const otRate = Number(document.getElementById("otRate").value);
+
+    if(!date || !start || !end){
+        alert("กรุณากรอกข้อมูลให้ครบ");
+        return;
+    }
+
+    let diff = (toMinutes(end) - toMinutes(start)) / 60;
+    if(diff < 0){ alert("เวลาออกต้องมากกว่าเวลาเข้า"); return; }
+
+    let normalHours = Math.min(diff, 8);
+    let otHours = diff > 8 ? diff - 8 : 0;
+
+    let total = (normalHours * rate) + (otHours * rate * otRate);
+
+    records.push({date, start, end, normalHours, otHours, total});
+    render();
 }
 
 function render(){
- const logs=loadLogs();
- const body=document.getElementById("logBody");
- body.innerHTML="";
+    const tbody = document.querySelector("#dataTable tbody");
+    tbody.innerHTML = "";
 
- let totalOT=0,totalIncome=0;
+    let totalDays=records.length, totalOT=0, totalMoney=0;
 
- logs.forEach((l,i)=>{
-   totalOT+=l.otHours;
-   totalIncome+=l.total;
-   body.innerHTML+=`
-     <tr>
-       <td>${i+1}</td>
-       <td>${l.date}</td>
-       <td>${l.start}</td>
-       <td>${l.end}</td>
-       <td>${l.otHours.toFixed(2)}</td>
-       <td class="right">${l.total.toFixed(2)}</td>
-       <td><button class="danger-btn" onclick="deleteLog(${i})">ลบ</button></td>
-     </tr>
-   `;
- });
+    records.forEach((r,i)=>{
+        totalOT += r.otHours;
+        totalMoney += r.total;
 
- document.getElementById("totalDays").textContent = logs.length;
- document.getElementById("totalOT").textContent = totalOT.toFixed(2);
- document.getElementById("totalIncome").textContent = totalIncome.toFixed(2);
+        tbody.innerHTML += `
+        <tr>
+            <td>${i+1}</td>
+            <td>${r.date}</td>
+            <td>${r.start}</td>
+            <td>${r.end}</td>
+            <td>${r.normalHours.toFixed(2)}</td>
+            <td>${r.otHours.toFixed(2)}</td>
+            <td>${r.total.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    document.getElementById("totalDays").innerText = totalDays;
+    document.getElementById("totalOT").innerText = totalOT.toFixed(2);
+    document.getElementById("totalMoney").innerText = totalMoney.toFixed(2);
 }
-
-document.getElementById("addBtn").onclick=()=>{
-
- const date = document.getElementById("dateInput").value;
- const s = document.getElementById("startTime").value;
- const e = document.getElementById("endTime").value;
- // ดึงค่าเวลาพักจาก input hidden (ค่าคือ 1 ชั่วโมง)
- const br = Number(document.getElementById("breakHours").value||1); 
- const wage = Number(document.getElementById("wage").value||0);
- const otRate = Number(document.getElementById("otRate").value);
-
- if(!date || !s || !e) return alert("กรุณาใส่ วันที่ เวลาเข้า และเวลาออก ให้ครบถ้วน");
-
- let mStart = toMinutes(s);
- let mEnd = toMinutes(e);
-
- if(mEnd < mStart) mEnd += 1440; // ข้ามวัน
-
- let totalWork = (mEnd - mStart) / 60; // ชั่วโมงทำงานทั้งหมด (Gross hours)
- 
- // **การคำนวณ: หักเวลาพัก 1 ชั่วโมง (br=1) และแยก OT**
- const NORMAL_HOURS_LIMIT = 8; 
-
- let totalHours = totalWork - br; // ชั่วโมงทำงานสุทธิ (Net hours)
- if(totalHours < 0) totalHours = 0;
- 
- let normalHours = Math.min(totalHours, NORMAL_HOURS_LIMIT);
- let otHours = totalHours - normalHours;
- if(otHours < 0) otHours = 0;
- 
- let money = (normalHours * wage) + (otHours * wage * otRate);
-
- const logs = loadLogs();
- logs.push({date,start:s,end:e,otHours:otHours,total:money});
- saveLogs(logs);
-
- render();
-
- document.getElementById("startTime").value="";
- document.getElementById("endTime").value="";
-};
-
-document.getElementById("clearBtn").onclick=()=>{
- if(confirm("ยืนยันการลบประวัติงานทั้งหมด?")){
-   localStorage.removeItem(key);
-   render();
- }
-};
-
-document.getElementById("exportBtn").onclick=()=>{
- const logs=loadLogs();
- if(!logs.length) return alert("ไม่มีข้อมูลที่จะ Export");
-
- let csv="ลำดับ,วันที่,เข้า,ออก,OT(ชม.),รวม(บาท)\n";
- logs.forEach((l,i)=>{
-   // ใช้ toFixed(2) ใน CSV เพื่อให้รูปแบบตัวเลขสม่ำเสมอ
-   csv+=`${i+1},${l.date},${l.start},${l.end},${l.otHours.toFixed(2)},${l.total.toFixed(2)}\n`;
- });
-
- const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");
- a.href=url;
- a.download="worklog.csv";
- a.style.display='none'; // ซ่อน element
- document.body.appendChild(a);
- a.click();
- document.body.removeChild(a); // ลบ element ออก
- URL.revokeObjectURL(url);
-};
-
-render();
 </script>
+
 </body>
 </html>
