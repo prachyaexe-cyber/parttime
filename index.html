@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกเวลาเข้า-ออก | Local Storage</title>
     <style>
-        /* CSS สำหรับ Dark Theme (ยังคงเดิม) */
+        /* CSS สำหรับ Dark Theme */
         :root {
             --bg-color: #121212;
             --container-bg: #1e1e1e;
@@ -194,37 +194,60 @@
 </div>
 
 <script>
-    // ตัวแปรสำหรับเก็บข้อมูล (จะถูกโหลดจาก Local Storage)
-    let timeEntries = [];
-    let currentId = 1;
-    const STORAGE_KEY = 'timeTrackerEntries'; // Key ที่ใช้เก็บใน Local Storage
+    // ข้อมูลที่คุณบันทึกไว้ (Hardcoded)
+    const initialEntries = [
+        { id: 1, date: "2025-11-01", timeIn: "16:10", timeOut: "18:00", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 2, date: "2025-11-03", timeIn: "15:46", timeOut: "19:12", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 3, date: "2025-11-04", timeIn: "16:07", timeOut: "19:00", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 4, date: "2025-11-05", timeIn: "15:40", timeOut: "19:00", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 5, date: "2025-11-06", timeIn: "17:40", timeOut: "21:10", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 6, date: "2025-11-07", timeIn: "16:45", timeOut: "19:40", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 7, date: "2025-11-10", timeIn: "09:00", timeOut: "18:40", breakTime: 0, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 8, date: "2025-11-12", timeIn: "09:30", timeOut: "18:50", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 9, date: "2025-11-13", timeIn: "09:00", timeOut: "18:37", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 10, date: "2025-11-14", timeIn: "09:30", timeOut: "18:00", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 11, date: "2025-11-16", timeIn: "09:00", timeOut: "18:10", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 12, date: "2025-11-18", timeIn: "09:03", timeOut: "19:06", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 13, date: "2025-11-20", timeIn: "09:00", timeOut: "18:05", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 14, date: "2025-11-21", timeIn: "09:00", timeOut: "18:07", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 },
+        { id: 15, date: "2025-11-25", timeIn: "09:00", timeOut: "18:28", breakTime: 60, hourlyRate: 50, otMultiplier: 1.5 }
+    ];
 
-    // --- ฟังก์ชันใหม่: โหลดข้อมูลจาก Local Storage ---
+    let timeEntries = [];
+    let currentId = 16; // เริ่มต้นที่ ID 16 เพื่อให้รายการใหม่ต่อจากข้อมูลเก่า
+    const STORAGE_KEY = 'timeTrackerEntries'; 
+
+    // --- ฟังก์ชันใหม่: โหลดข้อมูลจาก Local Storage (มี Logic กู้คืน) ---
     function loadTimeEntries() {
         const storedEntries = localStorage.getItem(STORAGE_KEY);
+        
         if (storedEntries) {
             try {
                 timeEntries = JSON.parse(storedEntries);
-                // กำหนด currentId ให้สูงกว่า ID สุดท้ายที่โหลดมา เพื่อไม่ให้ ID ซ้ำกัน
+                // กำหนด currentId ให้สูงกว่า ID สุดท้ายที่โหลดมา
                 if (timeEntries.length > 0) {
                     currentId = Math.max(...timeEntries.map(e => e.id)) + 1;
                 }
             } catch (e) {
                 console.error("Error loading or parsing data from Local Storage", e);
-                timeEntries = [];
+                timeEntries = initialEntries; // ถ้ามีข้อผิดพลาดในการโหลด ให้ใช้ข้อมูลกู้คืน
             }
+        } else {
+            // **ส่วนกู้คืนข้อมูล**: ถ้าไม่มีข้อมูลใน Local Storage เลย ให้ใช้ข้อมูลที่ Hardcode ไว้
+            timeEntries = initialEntries;
+            // บันทึกข้อมูลที่กู้คืนลง Local Storage ทันที เพื่อให้ใช้งานได้ถาวร
+            saveTimeEntries(); 
         }
-        renderTable(); // แสดงข้อมูลที่โหลดมาทันที
+        renderTable(); 
     }
 
-    // --- ฟังก์ชันใหม่: บันทึกข้อมูลลง Local Storage ---
+    // --- ฟังก์ชัน: บันทึกข้อมูลลง Local Storage ---
     function saveTimeEntries() {
-        // แปลง Array ของข้อมูลเป็น string ก่อนบันทึก
         localStorage.setItem(STORAGE_KEY, JSON.stringify(timeEntries));
     }
 
 
-    // --- HELPER FUNCTION: แปลงชั่วโมงทศนิยม เป็น "ชั่วโมง นาที" (ยังคงเดิม) ---
+    // --- HELPER FUNCTION: แปลงชั่วโมงทศนิยม เป็น "ชั่วโมง นาที" ---
     function formatHoursToHHMM(decimalHours) {
         if (decimalHours <= 0) return '0 ชั่วโมง 0 นาที';
         const hours = Math.floor(decimalHours);
@@ -237,7 +260,7 @@
         return `${hours} ชั่วโมง ${minutes} นาที`;
     }
 
-    // --- 1. เพิ่มเครื่องหมาย ":" อัตโนมัติและตรวจสอบรูปแบบเวลา (ยังคงเดิม) ---
+    // --- 1. เพิ่มเครื่องหมาย ":" อัตโนมัติและตรวจสอบรูปแบบเวลา ---
     function formatTimeInput(event) {
         const input = event.target;
         let value = input.value.replace(/[^0-9]/g, ''); 
@@ -260,7 +283,7 @@
     document.getElementById('timeIn').addEventListener('input', formatTimeInput);
     document.getElementById('timeOut').addEventListener('input', formatTimeInput);
 
-    // --- 2. ฟังก์ชันคำนวณชั่วโมงและรายได้ (ยังคงเดิม) ---
+    // --- 2. ฟังก์ชันคำนวณชั่วโมงและรายได้ ---
     function calculateEarnings(entry) {
         const dateBase = '2000/01/01';
         let timeIn = new Date(`${dateBase} ${entry.timeIn}`);
@@ -315,7 +338,7 @@
         };
 
         timeEntries.push(newEntry);
-        renderTable(); // เรียก renderTable ซึ่งจะเรียก saveTimeEntries
+        renderTable(); 
         
         document.getElementById('dateInput').value = '';
         document.getElementById('timeIn').value = '';
@@ -348,14 +371,14 @@
         });
         
         updateSummary();
-        saveTimeEntries(); // **บันทึกข้อมูลทุกครั้งที่ตารางถูก Render**
+        saveTimeEntries(); 
     }
 
     // --- 5. ลบรายการ ---
     function deleteEntry(id) {
         if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
             timeEntries = timeEntries.filter(entry => entry.id !== id);
-            renderTable(); // จะเรียก saveTimeEntries
+            renderTable(); 
         }
     }
 
@@ -379,7 +402,7 @@
              entry.hourlyRate = parseFloat(newRate) || entry.hourlyRate;
              entry.otMultiplier = parseFloat(newOT) || entry.otMultiplier;
 
-            renderTable(); // จะเรียก saveTimeEntries
+            renderTable(); 
         }
     }
     
@@ -407,7 +430,7 @@
         `;
     }
 
-    // --- 8. Export ข้อมูลเป็น CSV (ยังคงเดิม) ---
+    // --- 8. Export ข้อมูลเป็น CSV ---
     function exportToCSV() {
         let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
         let header = ["ลำดับ", "วันที่", "เวลาเข้า", "เวลาออก", "OT (ตัวคูณ)", "รายได้รวม (บาท)"];
