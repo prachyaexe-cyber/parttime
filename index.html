@@ -3,132 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกเวลาเข้า-ออก | Local Storage</title>
+    <title>บันทึกเวลาเข้า-ออก</title>
     <style>
-        /* CSS สำหรับ Dark Theme */
         :root {
-            --bg-color: #121212;
-            --container-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --input-bg: #333333;
-            --border-color: #444444;
-            --primary-color: #4CAF50; 
-            --edit-color: #2196F3;
-            --delete-color: #f44336;
+            color-scheme: dark;
+            --bg-color: #111214;
+            --surface-color: #191a1d;
+            --surface-raised: #222428;
+            --text-color: #eceef0;
+            --muted-color: #a7abb0;
+            --input-bg: #151619;
+            --border-color: #373a40;
+            --primary-color: #b5bac1;
+            --primary-strong: #d2d5da;
+            --danger-color: #d08a8a;
+            --shadow-color: 0 24px 70px rgba(0, 0, 0, .24);
+            --transition: 180ms ease;
         }
 
+        :root[data-theme="light"] {
+            color-scheme: light;
+            --bg-color: #f2f4f0;
+            --surface-color: #ffffff;
+            --surface-raised: #f6f8f5;
+            --text-color: #202923;
+            --muted-color: #6d7971;
+            --input-bg: #fbfcfa;
+            --border-color: #dce3dc;
+            --primary-color: #476b50;
+            --primary-strong: #35583e;
+            --danger-color: #b44d44;
+            --shadow-color: 0 24px 70px rgba(25, 42, 30, .08);
+        }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Aptos", "Leelawadee UI", sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
+            min-height: 100vh;
+            padding: clamp(18px, 4vw, 52px);
+            background: var(--bg-color);
             color: var(--text-color);
+            transition: background-color var(--transition), color var(--transition);
         }
 
         .container {
-            max-width: 1000px;
-            margin: auto;
-            background: var(--container-bg);
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: clamp(22px, 4vw, 48px);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow-color);
+            animation: page-enter 420ms ease both;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 36px;
+        }
+
+        .eyebrow {
+            margin: 0 0 9px;
+            color: var(--muted-color);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3 { margin-top: 0; }
+
+        h1 {
+            margin-bottom: 0;
+            font-size: clamp(25px, 4vw, 34px);
+            font-weight: 600;
         }
 
         h2, h3 {
             color: var(--text-color);
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--surface-raised);
+            color: var(--text-color);
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color var(--transition), background-color var(--transition), transform var(--transition);
+        }
+
+        .theme-toggle:hover { border-color: var(--primary-color); }
+        .theme-toggle:active { transform: scale(.98); }
+
+        .theme-track {
+            width: 30px;
+            height: 17px;
+            padding: 2px;
+            border-radius: 99px;
+            background: var(--border-color);
+            transition: background-color var(--transition);
+        }
+
+        .theme-thumb {
+            display: block;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: var(--primary-strong);
+            transition: transform var(--transition);
+        }
+
+        :root[data-theme="light"] .theme-thumb { transform: translateX(13px); }
+
+        .section-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 14px;
+            margin: 34px 0 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-heading h2 { margin: 0; }
+
+        .section-note {
+            color: var(--muted-color);
+            font-size: 12px;
         }
 
         .input-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: flex-end;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 18px;
+            align-items: end;
+            padding: 22px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--surface-raised);
         }
 
         .input-item label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--muted-color);
+            font-size: 12px;
+            font-weight: 600;
         }
 
         .input-group input, .input-group select {
-            padding: 10px;
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             background-color: var(--input-bg);
             color: var(--text-color);
+            font: inherit;
+            transition: border-color var(--transition), box-shadow var(--transition), background-color var(--transition);
         }
-        
-        #dateInput { width: 120px; }
-        #timeIn, #timeOut { width: 80px; }
-        #hourlyRate, #otMultiplier { width: 70px; }
-        
+
+        .input-group textarea {
+            width: 100%;
+            min-height: 78px;
+            padding: 9px 11px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font: inherit;
+            resize: vertical;
+            transition: border-color var(--transition), box-shadow var(--transition), background-color var(--transition);
+        }
+
+        .input-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
+        }
+
+        .input-item.details-item { grid-column: 1 / -1; }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
+        }
+
         .btn-add {
             background-color: var(--primary-color);
-            color: white;
+            color: var(--bg-color);
             border: none;
-            padding: 10px 20px;
+            min-height: 42px;
+            padding: 10px 18px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            transition: background-color var(--transition), transform var(--transition);
         }
-        .btn-add:hover { background-color: #3e8e41; }
-        
+        .btn-add:hover { background-color: var(--primary-strong); }
+        .btn-add:active { transform: translateY(1px); }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
         table {
             width: 100%;
+            min-width: 850px;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
         th, td {
-            border: 1px solid var(--border-color);
-            padding: 10px;
+            padding: 13px 12px;
             text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td.details-cell {
+            min-width: 200px;
+            max-width: 280px;
+            text-align: left;
+            white-space: normal;
         }
 
         th {
-            background-color: #282828;
-            color: #ffffff;
-            font-weight: bold;
+            background-color: var(--surface-raised);
+            color: var(--muted-color);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .3px;
         }
 
-        tr:nth-child(even) {
-            background-color: #252525;
+        tbody tr {
+            transition: background-color var(--transition);
+            animation: row-enter 260ms ease both;
         }
+
+        tbody tr:hover { background: var(--surface-raised); }
+        tbody tr:last-child td { border-bottom: 0; }
 
         .btn-action {
             margin: 2px;
-            padding: 5px 10px;
-            border: none;
+            padding: 6px 9px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             cursor: pointer;
-            color: white;
-            transition: opacity 0.3s;
+            color: var(--text-color);
+            background: transparent;
+            font: inherit;
+            font-size: 12px;
+            transition: color var(--transition), border-color var(--transition), background-color var(--transition);
         }
-        .btn-action:hover { opacity: 0.8; }
-        .btn-edit { background-color: var(--edit-color); }
-        .btn-delete { background-color: var(--delete-color); }
+        .btn-edit:hover { border-color: var(--primary-color); color: var(--primary-strong); }
+        .btn-delete:hover { border-color: var(--danger-color); color: var(--danger-color); }
 
         #summaryContainer {
-            font-size: 1.1em;
-            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 1px;
+            overflow: hidden;
             border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background-color: #282828;
-            margin-top: 15px;
+            border-radius: 6px;
+            background: var(--border-color);
         }
+
+        #summaryContainer p {
+            margin: 0;
+            padding: 18px;
+            background: var(--surface-raised);
+            color: var(--muted-color);
+            font-size: 13px;
+        }
+
         #summaryContainer strong {
-            color: var(--primary-color);
+            display: block;
+            margin-bottom: 7px;
+            color: var(--text-color);
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @keyframes page-enter {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes row-enter {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+
+        /* =========================
+           PRINT / PDF REPORT
+           ========================= */
+        .print-report {
+            display: none;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+
+            body {
+                padding: 0;
+                margin: 0;
+                background: #fff !important;
+                color: #000 !important;
+                font-family: "TH Sarabun New", "Sarabun", "Leelawadee UI", Tahoma, sans-serif;
+                font-size: 14pt;
+                line-height: 1.3;
+            }
+
+            .container {
+                display: none !important;
+            }
+
+            .print-report {
+                display: block !important;
+                width: 100%;
+                color: #000;
+                background: #fff;
+                font-family: "TH Sarabun New", "Sarabun", "Leelawadee UI", Tahoma, sans-serif;
+                font-size: inherit;
+                line-height: inherit;
+            }
+
+            .print-title {
+                text-align: center;
+                font-weight: 700;
+                margin: 0 0 8mm;
+            }
+
+            .print-name {
+                margin: 0 0 5mm 0;
+            }
+
+            .print-name-line {
+                display: inline-block;
+                min-width: 75mm;
+                border-bottom: 1px solid #000;
+                height: 9mm;
+                vertical-align: bottom;
+                padding: 0 6px;
+            }
+
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+                font-size: inherit;
+            }
+
+            .print-table th,
+            .print-table td {
+                border: 1px solid #000;
+                padding: 2mm 1.5mm;
+                text-align: center;
+                height: 8mm;
+                vertical-align: middle;
+            }
+
+            .print-table th {
+                font-weight: 700;
+                font-size: inherit;
+                background: #fff;
+            }
+
+            .print-table .col-date { width: 14%; }
+            .print-table .col-in { width: 14%; }
+            .print-table .col-out { width: 14%; }
+            .print-table .col-total { width: 13%; }
+            .print-table .col-detail { width: 45%; }
+
+            .print-table td:last-child {
+                text-align: left;
+                overflow-wrap: anywhere;
+            }
+
+            .print-footer {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 5mm;
+                margin-top: 6mm;
+                font-size: inherit;
+            }
+
+            .print-footer-item {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                gap: 2mm;
+                min-height: 22mm;
+                padding: 3mm;
+                border: 1px solid #000;
+            }
+
+            .print-footer-line {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 2mm;
+                width: 100%;
+                min-height: 10mm;
+                padding: 1mm 2mm;
+                border: 1px solid #000;
+                text-align: center;
+            }
+
+            .print-signature {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 4mm;
+                margin-top: 9mm;
+            }
+
+            .print-signature-line {
+                display: inline-block;
+                width: 65mm;
+                height: 9mm;
+                border-bottom: 1px solid #000;
+            }
+
+            .print-note {
+                margin-top: 6mm;
+                color: #333;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .container { padding: 20px 14px; }
+            .page-header { margin-bottom: 26px; }
+            .input-group { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 15px; gap: 14px 10px; }
+            .input-group .btn-add { grid-column: 1 / -1; }
+            .section-note { display: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
         }
     </style>
 </head>
 <body onload="loadTimeEntries()">
 <div class="container">
-    <h2>⏰ บันทึกเวลาเข้า-ออก</h2>
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">WORK HOURS</p>
+            <h1>บันทึกเวลาเข้า-ออก</h1>
+        </div>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="สลับธีม" aria-pressed="false" onclick="toggleTheme()">
+            <span id="themeLabel">โหมดมืด</span>
+            <span class="theme-track" aria-hidden="true"><span class="theme-thumb"></span></span>
+        </button>
+    </header>
 
     <div class="input-group">
         <div class="input-item">
@@ -145,12 +495,7 @@
         </div>
         <div class="input-item">
             <label for="breakTime">หักเวลาพัก (นาที)</label>
-            <select id="breakTime">
-                <option value="60">60 นาที</option>
-                <option value="30">30 นาที</option>
-                <option value="45">45 นาที</option>
-                <option value="0">0 นาที</option>
-            </select>
+            <input type="number" id="breakTime" value="60" min="0" max="1440" step="1" required>
         </div>
         <div class="input-item">
             <label for="hourlyRate">ค่าแรง/ชม.</label>
@@ -160,10 +505,23 @@
             <label for="otMultiplier">OT (ตัวคูณ)</label>
             <input type="number" id="otMultiplier" value="1.5" min="1" step="0.1" required>
         </div>
+        <div class="input-item">
+            <label for="employeeName">ชื่อ</label>
+            <input type="text" id="employeeName" placeholder="กรอกชื่อ-นามสกุล">
+        </div>
+        <div class="input-item details-item">
+            <label for="detailsInput">รายละเอียดงาน</label>
+            <textarea id="detailsInput" rows="2" placeholder="เช่น หน้าที่รับผิดชอบ หรือหมายเหตุของกะงาน"></textarea>
+        </div>
         <button class="btn-add" onclick="addTimeEntry()">บันทึกข้อมูล</button>
+        <button class="btn-action" type="button" onclick="printPDF()" style="min-height:42px; padding:10px 18px;">🖨️ พิมพ์ / PDF</button>
     </div>
 
-    <h3>📋 ข้อมูลบันทึกเวลา</h3>
+    <div class="section-heading">
+        <h2>ข้อมูลบันทึกเวลา</h2>
+        <span class="section-note">รายการทั้งหมดของคุณ</span>
+    </div>
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -171,6 +529,7 @@
                 <th>วันที่</th>
                 <th>เวลาเข้า</th>
                 <th>เวลาออก</th>
+                <th>รายละเอียด</th>
                 <th>หักพัก (นาที)</th>
                 <th>OT (ตัวคูณ)</th>
                 <th>ชั่วโมงรวม</th>
@@ -181,16 +540,14 @@
         <tbody id="timeTableBody">
             </tbody>
     </table>
+        </div>
 
-    <h3 style="margin-top: 30px;">
-        📊 สรุปรวมทั้งหมด
-    </h3>
+        <div class="section-heading">
+            <h2>สรุปรวมทั้งหมด</h2>
+        </div>
     <div id="summaryContainer">
         </div>
 
-    <button class="btn-add" onclick="exportToCSV()" style="margin-top: 20px;">
-        💾 ดึงไฟล์ CSV (ตามรูปแบบที่กำหนด)
-    </button>
 </div>
 
 <script>
@@ -216,6 +573,21 @@
     let timeEntries = [];
     let currentId = 16; // เริ่มต้นที่ ID 16 เพื่อให้รายการใหม่ต่อจากข้อมูลเก่า
     const STORAGE_KEY = 'timeTrackerEntries'; 
+    const THEME_KEY = 'timeTrackerTheme';
+
+    function setTheme(theme) {
+        const isLight = theme === 'light';
+        document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
+        document.getElementById('themeLabel').textContent = isLight ? 'โหมดสว่าง' : 'โหมดมืด';
+        document.getElementById('themeToggle').setAttribute('aria-pressed', String(isLight));
+        localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
+    }
+
+    function toggleTheme() {
+        setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+    }
+
+    setTheme(localStorage.getItem(THEME_KEY) || 'dark');
 
     // --- ฟังก์ชันใหม่: โหลดข้อมูลจาก Local Storage (มี Logic กู้คืน) ---
     function loadTimeEntries() {
@@ -318,7 +690,7 @@
         const date = document.getElementById('dateInput').value;
         const timeIn = document.getElementById('timeIn').value;
         const timeOut = document.getElementById('timeOut').value;
-        const breakTime = parseInt(document.getElementById('breakTime').value);
+        const breakTime = Number(document.getElementById('breakTime').value);
         const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
         const otMultiplier = parseFloat(document.getElementById('otMultiplier').value);
 
@@ -327,11 +699,17 @@
             return;
         }
 
+        if (!Number.isInteger(breakTime) || breakTime < 0 || breakTime > 1440) {
+            alert('กรุณากรอกเวลาพักเป็นจำนวนนาทีตั้งแต่ 0 ถึง 1440');
+            return;
+        }
+
         const newEntry = {
             id: currentId++,
             date,
             timeIn,
             timeOut,
+            details: document.getElementById('detailsInput').value.trim(),
             breakTime,
             hourlyRate,
             otMultiplier
@@ -343,6 +721,7 @@
         document.getElementById('dateInput').value = '';
         document.getElementById('timeIn').value = '';
         document.getElementById('timeOut').value = '';
+        document.getElementById('detailsInput').value = '';
     }
 
     // --- 4. แสดงผลในตาราง (Render) ---
@@ -358,6 +737,9 @@
             row.insertCell().textContent = entry.date;
             row.insertCell().textContent = entry.timeIn;
             row.insertCell().textContent = entry.timeOut;
+            const detailsCell = row.insertCell();
+            detailsCell.textContent = entry.details || '-';
+            detailsCell.className = 'details-cell';
             row.insertCell().textContent = entry.breakTime;
             row.insertCell().textContent = entry.otMultiplier.toFixed(1);
             row.insertCell().textContent = formatHoursToHHMM(result.workingHours); 
@@ -390,14 +772,16 @@
         const newDate = prompt(`แก้ไข วันที่:`, entry.date);
         const newTimeIn = prompt(`แก้ไข เวลาเข้า (HH:MM):`, entry.timeIn);
         const newTimeOut = prompt(`แก้ไข เวลาออก (HH:MM):`, entry.timeOut);
+        const newDetails = prompt(`แก้ไข รายละเอียดงาน:`, entry.details || '');
         const newBreak = prompt(`แก้ไข หักเวลาพัก (นาที):`, entry.breakTime);
         const newRate = prompt(`แก้ไข ค่าแรง/ชม.:`, entry.hourlyRate);
         const newOT = prompt(`แก้ไข OT (ตัวคูณ):`, entry.otMultiplier);
 
-        if (newDate && newTimeIn && newTimeOut && newBreak !== null && newRate && newOT) {
+           if (newDate && newTimeIn && newTimeOut && newDetails !== null && newBreak !== null && newRate && newOT) {
              entry.date = newDate;
              entry.timeIn = newTimeIn;
              entry.timeOut = newTimeOut;
+               entry.details = newDetails.trim();
              entry.breakTime = parseInt(newBreak) || 0;
              entry.hourlyRate = parseFloat(newRate) || entry.hourlyRate;
              entry.otMultiplier = parseFloat(newOT) || entry.otMultiplier;
@@ -430,34 +814,140 @@
         `;
     }
 
-    // --- 8. Export ข้อมูลเป็น CSV ---
-    function exportToCSV() {
-        let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
-        let header = ["ลำดับ", "วันที่", "เวลาเข้า", "เวลาออก", "OT (ตัวคูณ)", "รายได้รวม (บาท)"];
-        csvContent += header.join(",") + "\n";
 
-        timeEntries.forEach((entry, index) => {
+    // --- 8. พิมพ์รายงานสำหรับบันทึกเป็น PDF ---
+    function printPDF() {
+        const name = document.getElementById('employeeName').value.trim();
+        const printName = document.getElementById('printEmployeeName');
+        printName.textContent = name;
+
+        const printBody = document.getElementById('printTableBody');
+        printBody.innerHTML = '';
+
+        const rowsPerPage = 20;
+        const entries = [...timeEntries];
+
+        entries.forEach((entry) => {
             const result = calculateEarnings(entry);
-            let row = [
-                index + 1,
-                entry.date,
-                entry.timeIn,
-                entry.timeOut,
-                entry.otMultiplier.toFixed(1),
-                result.totalEarnings.toFixed(2)
-            ];
-            csvContent += row.join(",") + "\n";
+            const row = document.createElement('tr');
+
+            const date = document.createElement('td');
+            date.textContent = entry.date;
+            row.appendChild(date);
+
+            const timeIn = document.createElement('td');
+            timeIn.textContent = entry.timeIn;
+            row.appendChild(timeIn);
+
+            const timeOut = document.createElement('td');
+            timeOut.textContent = entry.timeOut;
+            row.appendChild(timeOut);
+
+            const total = document.createElement('td');
+            total.textContent = formatHoursToHHMM(result.workingHours)
+                .replace(' ชั่วโมง ', ':')
+                .replace(' นาที', '');
+            row.appendChild(total);
+
+            const detail = document.createElement('td');
+            const otHours = Math.max(0, result.workingHours - 8);
+            const workDetails = entry.details ? `${entry.details} | ` : '';
+            if (otHours > 0) {
+                detail.textContent = `${workDetails}OT ${formatHoursToHHMM(otHours)} | ${result.totalEarnings.toFixed(2)} บาท`;
+            } else {
+                detail.textContent = `${workDetails}${result.totalEarnings.toFixed(2)} บาท`;
+            }
+            row.appendChild(detail);
+
+            printBody.appendChild(row);
         });
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "time_log_" + new Date().toISOString().slice(0, 10) + ".csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // เติมแถวว่างให้หน้ารายงานมีลักษณะเหมือนแบบฟอร์มในภาพ
+        const emptyRows = Math.max(0, rowsPerPage - entries.length);
+        for (let i = 0; i < emptyRows; i++) {
+            const row = document.createElement('tr');
+            for (let c = 0; c < 5; c++) {
+                row.appendChild(document.createElement('td'));
+            }
+            printBody.appendChild(row);
+        }
+
+        let totalHours = 0;
+        let totalEarnings = 0;
+        const uniqueDates = new Set();
+
+        entries.forEach(entry => {
+            const result = calculateEarnings(entry);
+            totalHours += result.workingHours;
+            totalEarnings += result.totalEarnings;
+            uniqueDates.add(entry.date);
+        });
+
+        document.getElementById('printDays').textContent = uniqueDates.size;
+        document.getElementById('printHours').textContent = formatHoursToHHMM(totalHours);
+        document.getElementById('printMoney').textContent = totalEarnings.toFixed(2);
+
+        // เปิดหน้าพิมพ์ของเบราว์เซอร์ ซึ่งสามารถเลือก "Save as PDF" ได้
+        window.print();
     }
+
+
+    const NAME_KEY = 'timeTrackerEmployeeName';
+
+    function loadEmployeeName() {
+        const savedName = localStorage.getItem(NAME_KEY) || '';
+        document.getElementById('employeeName').value = savedName;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadEmployeeName();
+        document.getElementById('employeeName').addEventListener('input', (event) => {
+            localStorage.setItem(NAME_KEY, event.target.value);
+        });
+    });
+
 </script>
+
+
+<div class="print-report" id="printReport">
+    <div class="print-title">แบบสรุปเวลาปฏิบัติงานและค่าตอบแทน</div>
+
+    <div class="print-name">
+        ชื่อ<span class="print-name-line" id="printEmployeeName"></span>
+    </div>
+
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th class="col-date">วันที่</th>
+                <th class="col-in">เวลาเข้า</th>
+                <th class="col-out">เวลาออก</th>
+                <th class="col-total">รวม</th>
+                <th class="col-detail">รายละเอียด</th>
+            </tr>
+        </thead>
+        <tbody id="printTableBody"></tbody>
+    </table>
+
+    <div class="print-footer">
+        <div class="print-footer-item">
+            <span>จำนวนวันรวม</span>
+            <span class="print-footer-line"><span id="printDays"></span><span>วัน</span></span>
+        </div>
+        <div class="print-footer-item">
+            <span>เวลาทำงานรวม</span>
+            <span class="print-footer-line"><span id="printHours"></span></span>
+        </div>
+        <div class="print-footer-item">
+            <span>จำนวนเงินรวม</span>
+            <span class="print-footer-line"><span id="printMoney"></span><span>บาท</span></span>
+        </div>
+    </div>
+
+    <div class="print-signature">ผู้รับเงินลงชื่อ<span class="print-signature-line"></span></div>
+
+    <div class="print-note">เอกสารนี้จัดทำจากระบบบันทึกเวลาเข้า-ออก</div>
+</div>
 
 </body>
 </html>
