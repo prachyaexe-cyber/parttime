@@ -17,6 +17,8 @@
             --primary-color: #b5bac1;
             --primary-strong: #d2d5da;
             --danger-color: #d08a8a;
+            --chart-color: #a9c5ad;
+            --chart-grid: rgba(255, 255, 255, .09);
             --shadow-color: 0 24px 70px rgba(0, 0, 0, .24);
             --transition: 180ms ease;
         }
@@ -33,13 +35,15 @@
             --primary-color: #476b50;
             --primary-strong: #35583e;
             --danger-color: #b44d44;
+            --chart-color: #476b50;
+            --chart-grid: rgba(32, 41, 35, .12);
             --shadow-color: 0 24px 70px rgba(25, 42, 30, .08);
         }
 
         * { box-sizing: border-box; }
 
         body {
-            font-family: "Aptos", "Leelawadee UI", sans-serif;
+            font-family: "TH Sarabun New", "TH Sarabun", "Leelawadee UI", Tahoma, sans-serif;
             margin: 0;
             min-height: 100vh;
             padding: clamp(18px, 4vw, 52px);
@@ -302,6 +306,140 @@
             font-weight: 500;
         }
 
+        .statistics-panel {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--surface-raised);
+        }
+
+        .statistics-toolbar {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .statistics-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .statistics-filters label {
+            display: grid;
+            gap: 6px;
+            color: var(--muted-color);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .statistics-filters select {
+            min-height: 38px;
+            min-width: 145px;
+            padding: 7px 30px 7px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font: inherit;
+            font-size: 12px;
+        }
+
+        .statistics-filters select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
+        }
+
+        .chart-switch {
+            display: inline-flex;
+            padding: 3px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background: var(--input-bg);
+        }
+
+        .chart-switch button {
+            min-height: 30px;
+            padding: 5px 11px;
+            border: 0;
+            border-radius: 3px;
+            background: transparent;
+            color: var(--muted-color);
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color var(--transition), color var(--transition);
+        }
+
+        .chart-switch button[aria-pressed="true"] {
+            background: var(--surface-color);
+            color: var(--text-color);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .14);
+        }
+
+        .stats-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stats-kpi {
+            min-width: 0;
+            padding: 15px 18px;
+        }
+
+        .stats-kpi + .stats-kpi { border-left: 1px solid var(--border-color); }
+
+        .stats-kpi-label {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--muted-color);
+            font-size: 11px;
+        }
+
+        .stats-kpi-value {
+            display: block;
+            overflow: hidden;
+            color: var(--text-color);
+            font-size: 17px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .work-chart {
+            min-height: 260px;
+            padding-top: 16px;
+        }
+
+        .work-chart svg {
+            display: block;
+            width: 100%;
+            height: 280px;
+            overflow: visible;
+        }
+
+        .chart-grid-line { stroke: var(--chart-grid); stroke-width: 1; }
+        .chart-axis-label { fill: var(--muted-color); font-size: 11px; }
+        .chart-line { fill: none; stroke: var(--chart-color); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        .chart-area { fill: var(--chart-color); opacity: .11; }
+        .chart-point { fill: var(--surface-raised); stroke: var(--chart-color); stroke-width: 2; }
+        .chart-bar { fill: var(--chart-color); opacity: .82; }
+
+        .chart-empty {
+            display: grid;
+            min-height: 260px;
+            place-items: center;
+            color: var(--muted-color);
+            font-size: 13px;
+            text-align: center;
+        }
+
         @keyframes page-enter {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -331,7 +469,7 @@
                 margin: 0;
                 background: #fff !important;
                 color: #000 !important;
-                font-family: "TH Sarabun New", "Sarabun", "Leelawadee UI", Tahoma, sans-serif;
+                font-family: "TH Sarabun New", "TH Sarabun", "Leelawadee UI", Tahoma, sans-serif;
                 font-size: 14pt;
                 line-height: 1.3;
             }
@@ -345,7 +483,7 @@
                 width: 100%;
                 color: #000;
                 background: #fff;
-                font-family: "TH Sarabun New", "Sarabun", "Leelawadee UI", Tahoma, sans-serif;
+                font-family: "TH Sarabun New", "TH Sarabun", "Leelawadee UI", Tahoma, sans-serif;
                 font-size: inherit;
                 line-height: inherit;
             }
@@ -460,11 +598,22 @@
             .input-group { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 15px; gap: 14px 10px; }
             .input-group .btn-add { grid-column: 1 / -1; }
             .section-note { display: none; }
+            .statistics-panel { padding: 14px 10px; }
+            .statistics-toolbar { align-items: stretch; }
+            .statistics-filters { width: 100%; }
+            .statistics-filters label { flex: 1 1 135px; }
+            .statistics-filters select { width: 100%; min-width: 0; }
+            .chart-switch { align-self: flex-start; }
+            .stats-kpi { padding: 13px 9px; }
+            .stats-kpi-value { font-size: 14px; }
+            .work-chart svg { height: 235px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
         }
+    
+
     </style>
 </head>
 <body onload="loadTimeEntries()">
@@ -548,6 +697,32 @@
     <div id="summaryContainer">
         </div>
 
+        <div class="section-heading">
+            <h2>สถิติการทำงาน</h2>
+            <span class="section-note">แนวโน้มรายวันของเดือนที่เลือก</span>
+        </div>
+        <section class="statistics-panel" aria-label="สถิติการทำงาน">
+            <div class="statistics-toolbar">
+                <div class="statistics-filters">
+                    <label for="statsMonth">เดือน
+                        <select id="statsMonth" onchange="updateWorkStats()"></select>
+                    </label>
+                    <label for="statsMetric">แสดงผลเป็น
+                        <select id="statsMetric" onchange="updateWorkStats()">
+                            <option value="earnings">รายได้ (บาท)</option>
+                            <option value="hours">ชั่วโมงทำงาน</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="chart-switch" role="group" aria-label="รูปแบบกราฟ">
+                    <button type="button" aria-pressed="true" onclick="setStatsChartType('line')">กราฟเส้น</button>
+                    <button type="button" aria-pressed="false" onclick="setStatsChartType('bar')">กราฟแท่ง</button>
+                </div>
+            </div>
+            <div class="stats-kpis" id="statsKpis" aria-live="polite"></div>
+            <div class="work-chart" id="workChart"></div>
+        </section>
+
 </div>
 
 <script>
@@ -571,6 +746,7 @@
     ];
 
     let timeEntries = [];
+    let statsChartType = 'line';
     let currentId = 16; // เริ่มต้นที่ ID 16 เพื่อให้รายการใหม่ต่อจากข้อมูลเก่า
     const STORAGE_KEY = 'timeTrackerEntries'; 
     const THEME_KEY = 'timeTrackerTheme';
@@ -630,6 +806,13 @@
             return `${hours + 1} ชั่วโมง 0 นาที`;
         }
         return `${hours} ชั่วโมง ${minutes} นาที`;
+    }
+
+    function formatHoursToClock(decimalHours) {
+        const totalMinutes = Math.round(decimalHours * 60);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${hours}:${String(minutes).padStart(2, '0')}`;
     }
 
     // --- 1. เพิ่มเครื่องหมาย ":" อัตโนมัติและตรวจสอบรูปแบบเวลา ---
@@ -753,6 +936,7 @@
         });
         
         updateSummary();
+        updateWorkStats();
         saveTimeEntries(); 
     }
 
@@ -814,83 +998,436 @@
         `;
     }
 
+    function setStatsChartType(type) {
+        statsChartType = type;
+        document.querySelectorAll('.chart-switch button').forEach(button => {
+            button.setAttribute('aria-pressed', String(button.textContent.includes(type === 'line' ? 'เส้น' : 'แท่ง')));
+        });
+        updateWorkStats();
+    }
 
-    // --- 8. พิมพ์รายงานสำหรับบันทึกเป็น PDF ---
-    function printPDF() {
-        const name = document.getElementById('employeeName').value.trim();
-        const printName = document.getElementById('printEmployeeName');
-        printName.textContent = name;
+    function updateWorkStats() {
+        const monthSelect = document.getElementById('statsMonth');
+        const metricSelect = document.getElementById('statsMetric');
+        const kpis = document.getElementById('statsKpis');
+        const chart = document.getElementById('workChart');
+        const months = [...new Set(timeEntries.map(entry => entry.date.slice(0, 7)))].sort();
+        const selectedMonth = monthSelect.value;
 
-        const printBody = document.getElementById('printTableBody');
-        printBody.innerHTML = '';
-
-        const rowsPerPage = 20;
-        const entries = [...timeEntries];
-
-        entries.forEach((entry) => {
-            const result = calculateEarnings(entry);
-            const row = document.createElement('tr');
-
-            const date = document.createElement('td');
-            date.textContent = entry.date;
-            row.appendChild(date);
-
-            const timeIn = document.createElement('td');
-            timeIn.textContent = entry.timeIn;
-            row.appendChild(timeIn);
-
-            const timeOut = document.createElement('td');
-            timeOut.textContent = entry.timeOut;
-            row.appendChild(timeOut);
-
-            const total = document.createElement('td');
-            total.textContent = formatHoursToHHMM(result.workingHours)
-                .replace(' ชั่วโมง ', ':')
-                .replace(' นาที', '');
-            row.appendChild(total);
-
-            const detail = document.createElement('td');
-            const otHours = Math.max(0, result.workingHours - 8);
-            const workDetails = entry.details ? `${entry.details} | ` : '';
-            if (otHours > 0) {
-                detail.textContent = `${workDetails}OT ${formatHoursToHHMM(otHours)} | ${result.totalEarnings.toFixed(2)} บาท`;
-            } else {
-                detail.textContent = `${workDetails}${result.totalEarnings.toFixed(2)} บาท`;
-            }
-            row.appendChild(detail);
-
-            printBody.appendChild(row);
+        monthSelect.innerHTML = '';
+        months.forEach(month => {
+            const [year, monthNumber] = month.split('-').map(Number);
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' })
+                .format(new Date(year, monthNumber - 1, 1));
+            monthSelect.appendChild(option);
         });
 
-        // เติมแถวว่างให้หน้ารายงานมีลักษณะเหมือนแบบฟอร์มในภาพ
-        const emptyRows = Math.max(0, rowsPerPage - entries.length);
-        for (let i = 0; i < emptyRows; i++) {
-            const row = document.createElement('tr');
-            for (let c = 0; c < 5; c++) {
-                row.appendChild(document.createElement('td'));
-            }
-            printBody.appendChild(row);
+        if (!months.length) {
+            monthSelect.disabled = true;
+            metricSelect.disabled = true;
+            kpis.innerHTML = '';
+            chart.innerHTML = '<div class="chart-empty">ยังไม่มีข้อมูลสำหรับแสดงสถิติ</div>';
+            return;
         }
+
+        monthSelect.disabled = false;
+        metricSelect.disabled = false;
+        monthSelect.value = months.includes(selectedMonth) ? selectedMonth : months[months.length - 1];
+
+        const monthEntries = timeEntries.filter(entry => entry.date.startsWith(monthSelect.value));
+        const dailyTotals = new Map();
+        let totalHours = 0;
+        let totalEarnings = 0;
+
+        monthEntries.forEach(entry => {
+            const result = calculateEarnings(entry);
+            const total = dailyTotals.get(entry.date) || { hours: 0, earnings: 0 };
+            total.hours += result.workingHours;
+            total.earnings += result.totalEarnings;
+            dailyTotals.set(entry.date, total);
+            totalHours += result.workingHours;
+            totalEarnings += result.totalEarnings;
+        });
+
+        kpis.innerHTML = `
+            <div class="stats-kpi"><span class="stats-kpi-label">วันทำงาน</span><strong class="stats-kpi-value">${dailyTotals.size} วัน</strong></div>
+            <div class="stats-kpi"><span class="stats-kpi-label">ชั่วโมงทำงาน</span><strong class="stats-kpi-value">${formatHoursToHHMM(totalHours)}</strong></div>
+            <div class="stats-kpi"><span class="stats-kpi-label">รายได้รวม</span><strong class="stats-kpi-value">${totalEarnings.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</strong></div>
+        `;
+
+        const [year, monthNumber] = monthSelect.value.split('-').map(Number);
+        const daysInMonth = new Date(year, monthNumber, 0).getDate();
+        const metric = metricSelect.value;
+        const data = Array.from({ length: daysInMonth }, (_, index) => {
+            const day = index + 1;
+            const date = `${monthSelect.value}-${String(day).padStart(2, '0')}`;
+            return { day, value: dailyTotals.get(date)?.[metric] || 0 };
+        });
+        drawWorkChart(chart, data, metric);
+    }
+
+    function drawWorkChart(container, data, metric) {
+        const width = 840;
+        const height = 280;
+        const left = 52;
+        const right = 824;
+        const top = 18;
+        const bottom = 236;
+        const values = data.map(point => point.value);
+        const largestValue = Math.max(...values, 0);
+        const axisMax = largestValue > 0 ? Math.ceil(largestValue * 1.15 / 4) * 4 : 4;
+        const x = index => data.length === 1 ? (left + right) / 2 : left + index * (right - left) / (data.length - 1);
+        const y = value => bottom - value / axisMax * (bottom - top);
+        const formatAxisValue = value => new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 }).format(value);
+        const grid = Array.from({ length: 5 }, (_, index) => {
+            const value = axisMax * (4 - index) / 4;
+            const yPosition = top + index * (bottom - top) / 4;
+            return `<g><line class="chart-grid-line" x1="${left}" y1="${yPosition}" x2="${right}" y2="${yPosition}"/><text class="chart-axis-label" x="${left - 10}" y="${yPosition + 4}" text-anchor="end">${formatAxisValue(value)}</text></g>`;
+        }).join('');
+        const labelEvery = data.length > 21 ? 5 : data.length > 12 ? 3 : data.length > 7 ? 2 : 1;
+        const labels = data.map((point, index) => {
+            if (index % labelEvery !== 0 && index !== data.length - 1) return '';
+            return `<text class="chart-axis-label" x="${x(index)}" y="${bottom + 25}" text-anchor="middle">${point.day}</text>`;
+        }).join('');
+        let plot;
+
+        if (statsChartType === 'bar') {
+            const barWidth = Math.max(3, Math.min(18, (right - left) / data.length * .62));
+            plot = data.map((point, index) => {
+                const barY = y(point.value);
+                const barHeight = bottom - barY;
+                return `<rect class="chart-bar" x="${x(index) - barWidth / 2}" y="${barY}" width="${barWidth}" height="${barHeight}" rx="2"><title>วันที่ ${point.day}: ${formatAxisValue(point.value)} ${metric === 'hours' ? 'ชั่วโมง' : 'บาท'}</title></rect>`;
+            }).join('');
+        } else {
+            const points = data.map((point, index) => `${x(index)},${y(point.value)}`).join(' ');
+            const area = `${left},${bottom} ${points} ${right},${bottom}`;
+            const circles = data.map((point, index) => `<circle class="chart-point" cx="${x(index)}" cy="${y(point.value)}" r="3.5"><title>วันที่ ${point.day}: ${formatAxisValue(point.value)} ${metric === 'hours' ? 'ชั่วโมง' : 'บาท'}</title></circle>`).join('');
+            plot = `<polygon class="chart-area" points="${area}"/><polyline class="chart-line" points="${points}"/>${circles}`;
+        }
+
+        const metricLabel = metric === 'hours' ? 'ชั่วโมงทำงาน' : 'รายได้';
+        container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="กราฟ${statsChartType === 'line' ? 'เส้น' : 'แท่ง'}${metricLabel}รายวัน">
+            ${grid}${plot}${labels}
+        </svg>`;
+    }
+
+
+    // --- 8. พิมพ์รายงานสำหรับบันทึกเป็น PDF ---
+    function escapeHTML(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatPrintDate(dateString) {
+        if (!dateString) return '';
+        const parts = dateString.split('-');
+        if (parts.length !== 3) return dateString;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function printPDF() {
+        // ใช้ข้อมูลชุดเดียวกับตารางบนเว็บไซต์โดยตรง
+        const entries = Array.isArray(timeEntries) ? [...timeEntries] : [];
+
+        const name = document.getElementById('employeeName').value.trim();
 
         let totalHours = 0;
         let totalEarnings = 0;
         const uniqueDates = new Set();
 
-        entries.forEach(entry => {
+        const rowsHTML = entries.map((entry, index) => {
             const result = calculateEarnings(entry);
             totalHours += result.workingHours;
             totalEarnings += result.totalEarnings;
-            uniqueDates.add(entry.date);
-        });
+            if (entry.date) uniqueDates.add(entry.date);
 
-        document.getElementById('printDays').textContent = uniqueDates.size;
-        document.getElementById('printHours').textContent = formatHoursToHHMM(totalHours);
-        document.getElementById('printMoney').textContent = totalEarnings.toFixed(2);
+            const detailsText = entry.details ? entry.details.trim() : '';
 
-        // เปิดหน้าพิมพ์ของเบราว์เซอร์ ซึ่งสามารถเลือก "Save as PDF" ได้
-        window.print();
+            return `
+                <tr>
+                    <td>${escapeHTML(formatPrintDate(entry.date))}</td>
+                    <td>${escapeHTML(entry.timeIn)}</td>
+                    <td>${escapeHTML(entry.timeOut)}</td>
+                    <td>${escapeHTML(formatHoursToClock(result.workingHours))}</td>
+                    <td class="detail-cell">${escapeHTML(detailsText)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const emptyMessage = entries.length === 0
+            ? '<tr><td colspan="5" class="empty-row">ยังไม่มีข้อมูลที่บันทึก</td></tr>'
+            : '';
+
+        const reportHTML = `
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>แบบสรุปเวลาปฏิบัติงานและค่าตอบแทน</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 8mm;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+        }
+
+        body {
+            font-family: "TH Sarabun New", "TH Sarabun", "Sarabun", Tahoma, sans-serif;
+            font-size: 12pt;
+            line-height: 1;
+        }
+
+        .report {
+            width: 100%;
+            transform: scale(var(--fit-scale, 1));
+            transform-origin: top left;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 15pt;
+            font-weight: 700;
+            margin: 0 0 2mm;
+        }
+
+        .name-line {
+            font-size: 12pt;
+            margin: 0 0 2mm;
+        }
+
+        .underline {
+            display: inline-block;
+            min-width: 60mm;
+            margin-left: 1mm;
+            border-bottom: 1px solid #000;
+            height: 5mm;
+            vertical-align: bottom;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: .5mm 1mm;
+            vertical-align: middle;
+            height: 5mm;
+        }
+
+        th {
+            text-align: center;
+            font-weight: 700;
+            background: #fff;
+        }
+
+        td {
+            text-align: center;
+        }
+
+        th:nth-child(1), td:nth-child(1) { width: 16%; }
+        th:nth-child(2), td:nth-child(2) { width: 16%; }
+        th:nth-child(3), td:nth-child(3) { width: 16%; }
+        th:nth-child(4), td:nth-child(4) { width: 13%; }
+        th:nth-child(5), td:nth-child(5) { width: 39%; }
+
+        .detail-cell {
+            text-align: left;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .detail-text {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .empty-row {
+            text-align: center;
+            height: 12mm;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr 1fr;
+            gap: 2mm;
+            margin-top: 2mm;
+        }
+
+        .summary-box {
+            border: 1px solid #000;
+            padding: 1mm 2mm;
+            min-height: 11mm;
+        }
+
+        .summary-label {
+            display: block;
+            font-size: 10pt;
+            margin-bottom: .5mm;
+        }
+
+        .summary-value {
+            display: block;
+            border: 1px solid #000;
+            min-height: 5mm;
+            padding: .5mm 1mm;
+            text-align: center;
+        }
+
+        .signature {
+            margin-top: 3mm;
+            text-align: right;
+            font-size: 11pt;
+        }
+
+        .signature-line {
+            display: inline-block;
+            width: 45mm;
+            border-bottom: 1px solid #000;
+            height: 5mm;
+            vertical-align: bottom;
+            margin-left: 2mm;
+        }
+
+        .footer-note {
+            margin-top: 2mm;
+            font-size: 9pt;
+        }
+
+        @media print {
+            html {
+                height: 281mm;
+                overflow: hidden;
+            }
+
+            body {
+                height: 281mm;
+                overflow: hidden;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="print-page-height" style="position:absolute;width:1mm;height:281mm;visibility:hidden;pointer-events:none"></div>
+    <div class="report">
+        <div class="title">แบบสรุปเวลาปฏิบัติงานและค่าตอบแทน</div>
+
+        <div class="name-line">
+            ชื่อ<span class="underline">${escapeHTML(name)}</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>วันที่</th>
+                    <th>เวลาเข้า</th>
+                    <th>เวลาออก</th>
+                    <th>รวม</th>
+                    <th>รายละเอียด</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${emptyMessage}
+                ${rowsHTML}
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <div class="summary-box">
+                <span class="summary-label">จำนวนวันรวม</span>
+                <span class="summary-value">${uniqueDates.size.toLocaleString('th-TH')} วัน</span>
+            </div>
+            <div class="summary-box">
+                <span class="summary-label">เวลาทำงานรวม</span>
+                <span class="summary-value">${escapeHTML(formatHoursToHHMM(totalHours))}</span>
+            </div>
+            <div class="summary-box">
+                <span class="summary-label">จำนวนเงินรวม</span>
+                <span class="summary-value">${totalEarnings.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+            </div>
+        </div>
+
+        <div class="signature">
+            ผู้รับเงินลงชื่อ<span class="signature-line"></span>
+        </div>
+
+        <div class="footer-note">เอกสารนี้จัดทำจากระบบบันทึกเวลาเข้า-ออก</div>
+    </div>
+</body>
+</html>`;
+
+        const printWindow = window.open('', '_blank', 'width=1000,height=800');
+
+        if (!printWindow) {
+            alert('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาต Pop-up สำหรับไฟล์นี้ แล้วลองใหม่');
+            return;
+        }
+
+        printWindow.document.open();
+        printWindow.document.write(reportHTML);
+        printWindow.document.close();
+
+        const startPrint = () => {
+            setTimeout(() => {
+                const report = printWindow.document.querySelector('.report');
+                const pageMarker = printWindow.document.getElementById('print-page-height');
+
+                if (!report || !pageMarker) {
+                    printWindow.alert('ไม่สามารถเตรียมหน้าพิมพ์ได้ กรุณาลองใหม่อีกครั้ง');
+                    return;
+                }
+
+                const pageHeight = pageMarker.getBoundingClientRect().height;
+                const availableHeight = pageHeight - 8;
+                const reportHeight = report.getBoundingClientRect().height;
+                const fitScale = reportHeight > availableHeight
+                    ? Math.max(0.35, availableHeight / reportHeight)
+                    : 1;
+
+                report.style.setProperty('--fit-scale', String(fitScale));
+                printWindow.document.body.style.height = `${pageHeight}px`;
+                printWindow.document.body.style.overflow = 'hidden';
+                printWindow.focus();
+                printWindow.print();
+            }, 300);
+        };
+
+        printWindow.onload = startPrint;
+        // รองรับกรณี browser โหลด document เสร็จก่อน event onload ถูกผูก
+        if (printWindow.document.readyState === 'complete') {
+            startPrint();
+        }
     }
-
 
     const NAME_KEY = 'timeTrackerEmployeeName';
 
@@ -908,46 +1445,6 @@
 
 </script>
 
-
-<div class="print-report" id="printReport">
-    <div class="print-title">แบบสรุปเวลาปฏิบัติงานและค่าตอบแทน</div>
-
-    <div class="print-name">
-        ชื่อ<span class="print-name-line" id="printEmployeeName"></span>
-    </div>
-
-    <table class="print-table">
-        <thead>
-            <tr>
-                <th class="col-date">วันที่</th>
-                <th class="col-in">เวลาเข้า</th>
-                <th class="col-out">เวลาออก</th>
-                <th class="col-total">รวม</th>
-                <th class="col-detail">รายละเอียด</th>
-            </tr>
-        </thead>
-        <tbody id="printTableBody"></tbody>
-    </table>
-
-    <div class="print-footer">
-        <div class="print-footer-item">
-            <span>จำนวนวันรวม</span>
-            <span class="print-footer-line"><span id="printDays"></span><span>วัน</span></span>
-        </div>
-        <div class="print-footer-item">
-            <span>เวลาทำงานรวม</span>
-            <span class="print-footer-line"><span id="printHours"></span></span>
-        </div>
-        <div class="print-footer-item">
-            <span>จำนวนเงินรวม</span>
-            <span class="print-footer-line"><span id="printMoney"></span><span>บาท</span></span>
-        </div>
-    </div>
-
-    <div class="print-signature">ผู้รับเงินลงชื่อ<span class="print-signature-line"></span></div>
-
-    <div class="print-note">เอกสารนี้จัดทำจากระบบบันทึกเวลาเข้า-ออก</div>
-</div>
 
 </body>
 </html>
